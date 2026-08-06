@@ -30,7 +30,7 @@ def load_model(cfg, device):
         logger.info(f"Loading model from Hugging Face.")
         hf_hub_download(repo_id='bwittmann/vesselFM', filename='meta.yaml') # required to track downloads
         ckpt = torch.load(
-            hf_hub_download(repo_id='bwittmann/vesselFM', filename='vesselFM_base.pt'),
+            hf_hub_download(repo_id='bwittmann/vesselFM', filename='vesselFM_all.pt'),
             map_location=device, weights_only=True
         )
 
