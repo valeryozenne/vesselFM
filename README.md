@@ -5,8 +5,7 @@
 ---
 
 ## 🟢 Updates
-
-- 08/2026: We release checkpoints trained on a **broader training set including our evaluation set**, for potentially increased *zero-shot* performance.
+08/2026: We release checkpoints trained on a **broader training set including our evaluation set**, for potentially increased *zero*-shot performance.
 
 
 ## 🟢 Installation
