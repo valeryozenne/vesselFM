@@ -8,6 +8,7 @@ import torch
 import torch.nn.functional as F
 import hydra
 import numpy as np
+import SimpleITK as sitk
 from tqdm import tqdm
 from huggingface_hub import hf_hub_download
 from monai.inferers import SlidingWindowInfererAdapt
@@ -15,7 +16,6 @@ from skimage.morphology import remove_small_objects
 from skimage.exposure import equalize_hist
 
 from vesselfm.seg.utils.data import generate_transforms
-from vesselfm.seg.utils.io import determine_reader_writer
 from vesselfm.seg.utils.evaluation import Evaluator, calculate_mean_metrics
 
 
@@ -37,6 +37,45 @@ def load_model(cfg, device):
     model = hydra.utils.instantiate(cfg.model)
     model.load_state_dict(ckpt)
     return model
+
+def write_nifti(data, file_path, spacing=None):
+    meta_data = {}
+    meta_data['itk_spacing'] = spacing if spacing else [1, 1, 1]
+    data_itk = sitk.GetImageFromArray(data)
+    data_itk.SetSpacing(meta_data['itk_spacing'])
+    sitk.WriteImage(data_itk, str(file_path))
+
+def read_nifti(path):
+    sitk_img = sitk.ReadImage(path)
+    orig_size = np.array(sitk_img.GetSize())
+    orig_spacing = np.array(sitk_img.GetSpacing())
+
+    if not all(s == orig_spacing[0] for s in orig_spacing):  # data needs to be isotropic
+        logger.warning("Image spacing is anisotropic.")
+
+        if len(set(orig_spacing)) != len(orig_spacing):
+            duplicate = [s for s in orig_spacing if list(orig_spacing).count(s) == 2][0]
+            target_spacing = [duplicate, duplicate, duplicate]
+        else:
+            target_spacing = [min(orig_spacing)] * 3
+        target_size = np.round(orig_size * (orig_spacing / target_spacing)).astype(int)
+        logger.info(f"Adjust spacing from {orig_spacing} to {target_spacing}")
+
+        resampler = sitk.ResampleImageFilter()
+        interpolator = sitk.sitkLinear
+        resampler.SetInterpolator(interpolator)
+        resampler.SetOutputSpacing(target_spacing)
+        resampler.SetSize([int(s) for s in target_size])
+        resampler.SetOutputOrigin(sitk_img.GetOrigin())
+        resampler.SetOutputDirection(sitk_img.GetDirection())
+
+        # perform resampling
+        sitk_img = resampler.Execute(sitk_img)
+    else:
+        target_spacing = list(orig_spacing)
+
+    img = sitk.GetArrayFromImage(sitk_img)
+    return img, target_spacing
 
 def get_paths(cfg):
     image_paths = list(Path(cfg.image_path).iterdir())
@@ -86,10 +125,6 @@ def main(cfg):
     image_paths, mask_paths = get_paths(cfg)
     logger.info(f"Found {len(image_paths)} images in {cfg.image_path}.")
 
-    file_ending = (cfg.image_file_ending if cfg.image_file_ending else image_paths[0].suffix)
-    image_reader_writer = determine_reader_writer(file_ending)()
-    save_writer = determine_reader_writer(file_ending)()
-
     # init sliding window inferer
     logger.debug(f"Sliding window patch size: {cfg.patch_size}")
     logger.debug(f"Sliding window batch size: {cfg.batch_size}.")
@@ -103,11 +138,15 @@ def main(cfg):
     metrics_dict = {}
     with torch.no_grad():
         for idx, image_path in tqdm(enumerate(image_paths), total=len(image_paths), desc="Processing images."):
+            if image_path.suffix != '.gz':
+                raise ValueError(f"Unexpected file extension '{image_path.suffix}' for {image_path.name}. Expected '.nii.gz'.")
+
             preds = [] # average over test time augmentations
             for scale in cfg.tta.scales:
                 # apply pre-processing transforms
-                image = transforms(image_reader_writer.read_images(image_path)[0].astype(np.float32))[None].to(device)
-                mask = torch.tensor(image_reader_writer.read_images(mask_paths[idx])[0]).bool() if mask_paths else None
+                image, spacing = read_nifti(image_path)
+                image = transforms(image.astype(np.float32))[None].to(device)
+                mask = torch.tensor(read_nifti(mask_paths[idx])[0]).bool() if mask_paths else None
   
                 # apply test time augmentation
                 if cfg.tta.invert:
@@ -138,8 +177,16 @@ def main(cfg):
                 )
 
             # save final pred
-            save_writer.write_seg(
-                pred_thresh.astype(np.uint8), output_folder / f"{image_path.name.split('.')[0]}_{cfg.file_app}pred.{file_ending}"
+            write_nifti(
+                pred_thresh.astype(np.uint8), 
+                output_folder / f"{image_path.name.split('.')[0]}_{cfg.file_app}pred.nii.gz",
+                spacing
+            )
+
+            write_nifti(
+                image.astype(np.float32).squeeze(), 
+                output_folder / f"{image_path.name.split('.')[0]}_{cfg.file_app}img.nii.gz",
+                spacing
             )
 
             if mask_paths is not None:

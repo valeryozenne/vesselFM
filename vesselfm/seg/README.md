@@ -5,7 +5,8 @@ Adjust the [inference](./configs/inference.yaml) config file (see `#TODO`) and r
 
     python vesselfm/seg/inference.py
 
-Images to be segmented should be placed in `/path/to/image_folder` as `.nii.gz` files. The results will be saved in `/path/to/output_folder`. Although we did not use them in our experiments, test-time augmentations (see `tta`) and post-processing steps (see `post`) can further improve the quality of the predicted segmentation mask. We have, therefore, included these features in the inference script as well. It is further strongly advised to adjust other inference parameters (e.g., `upper` and `lower` percentiles in `transforms_config`) to suit your data.
+Images to be segmented should be placed in `/path/to/image_folder` as `.nii.gz` files. 
+Images should ideally have isotropic resolution (equal voxel spacing in x, y, and z) already. If not, the script will automatically resample them to isotropic spacing before segmentation. The final results will be saved in `/path/to/output_folder`. Although we did not use them in our experiments, test-time augmentations (see `tta`) and post-processing steps (see `post`) can further improve the quality of the predicted segmentation mask. We have, therefore, included these features in the inference script as well. It is further strongly advised to adjust other inference parameters (e.g., `upper` and `lower` percentiles in `transforms_config`) to suit your data.
 
 ## Pre-Train on Three Data Sources
 Adjust the [training](./configs/train.yaml) and [dataset](./configs/data/real_drand_flow.yaml) config files (see `#TODO`) and run:
