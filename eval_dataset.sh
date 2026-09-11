@@ -11,3 +11,9 @@ cp data/d_real/MSD_Task8/0/mask.npy data/evaluation/masks/msd.npy
 
 cp data/d_real/OCTA_no_rot/0/img.npy data/evaluation/images/octa.npy
 cp data/d_real/OCTA_no_rot/0/mask.npy data/evaluation/masks/octa.npy
+
+rsync -avhP \
+  --no-inc-recursive \
+  --inplace \
+  -e "ssh -T -c aes128-gcm@openssh.com -o Compression=no" \
+  dir jz:/lustre/fsn1/projects/rech/fxj/uwv71fy/data
