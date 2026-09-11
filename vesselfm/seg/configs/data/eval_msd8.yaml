@@ -2,9 +2,11 @@ defaults:
   - default_finetune@MSD8
   - _self_
 
+
 MSD8:
-  sample_prop: 1
-  path: /path/to/eval_set/MSD8 #TODO
+  sample_prop: 0
+  path: data/finetune/msd #TODO
+  file_format: "npy"
 
   transforms:
     train:

@@ -1,16 +1,19 @@
 defaults:
   - train
-  - data: eval_smile
+  - override data: eval_bvem
   - _self_
 
-num_shots: 0
+num_shots: 3
 lr: 0.00001
 devices: [0]
-run_name: vesselfm
-path_to_chkpt: /path/to/pretrained_ckpt #TODO
-chkpt_folder:  /path/where/to/store/ckpts #TODO
+run_name: rmsbvessel
+path_to_chkpt: runs/rmsbvessel/260717a/pretrain_260717a_last.ckpt #TODO
+chkpt_folder:  runs/vesselfm/finetune #TODO
 
 dataloader:
+  num_workers: 0 # permet au finetune de fonctionner sans erreur de GPU CUDA
+  prefetch_factor: null
+  persistent_workers: False
   shuffle: False
 
 trainer:

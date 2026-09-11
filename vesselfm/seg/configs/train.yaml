@@ -13,16 +13,16 @@ num_classes: 1
 # training
 seed: 404
 lr: 0.0001
-batch_size: 8
-eval_path: /path/to/eval_set_pretrain #TODO
+batch_size: 8 # lié au val_check_interval dans configs/trainer/default.yaml
+eval_path: data/evaluation #TODO
 path_to_chkpt: null
 devices: [0]
 
 # logging
-run_name: vesselfm
-wandb_project: vesselfm
-chkpt_folder: /path/where/to/store/chkpts #TODO
-offline: False
+run_name: 260717a
+wandb_project: rmsbvessel
+chkpt_folder: runs #TODO
+offline: True # permet de skip la connexion à wandb
 
 # dataloader
 dataloader:

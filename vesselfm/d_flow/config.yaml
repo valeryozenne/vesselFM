@@ -11,7 +11,7 @@ TRANSFORMS: # online
 
 DATA_GEN:
   DIFF: # diffusion-based data gen
-    TAG: 'fm'
+    TAG: 'fm-more'
     GPU_ID: 0
     WARMUP_STEPS: 500
     EPOCHS: 200
@@ -19,29 +19,29 @@ DATA_GEN:
     SAVE_INTERVAL: 10000
 
     CLASSES:
-      /path/to/d_drand: [0, 0.3] #TODO
-      /path/to/d_real/3Dircadb1: [1, 0.04375] #TODO
-      /path/to/d_real/CSD: [3, 0.04375] #TODO
-      /path/to/d_real/DeepVess: [4, 0.04375] #TODO
-      /path/to/d_real/DeepVesselNet_syncrotone: [5, 0.04375] #TODO
-      /path/to/d_real/DeepVesselNet_tof_mra: [6, 0.04375] #TODO
-      /path/to/d_real/HRKidney_thres: [7, 0.04375] #TODO
-      /path/to/d_real/HiP-CT: [8, 0.04375] #TODO
-      /path/to/d_real/Lightsheet_no_rot: [9, 0.04375] #TODO
-      /path/to/d_real/MiniVess: [11, 0.04375] #TODO
-      /path/to/d_real/TopCoW_ct: [14, 0.04375] #TODO
-      /path/to/d_real/TopCoW_mra: [15, 0.04375] #TODO
-      /path/to/d_real/TubeNet_2Photon: [16, 0.04375] #TODO
-      /path/to/d_real/TubeNet_MRI: [17, 0.04375] #TODO
-      /path/to/d_real/TubeTK: [18, 0.04375] #TODO
-      /path/to/d_real/VesSAP_anno_c0_no_rot: [19, 0.021875] #TODO
-      /path/to/d_real/VesSAP_anno_c1_no_rot: [20, 0.021875] #TODO
-      /path/to/d_real/VesselExpress_Figure2: [21, 0.01458] #TODO
-      /path/to/d_real/VesselExpress_Heart: [22, 0.01458] #TODO
-      /path/to/d_real/VesselExpress_Bladder: [23, 0.01459] #TODO
+      data/d_drand/d_drand: [0, 0.44] #TODO
+      data/d_real/3Dircadb1: [1, 0.04] #TODO
+      data/d_real/DeepVess: [2, 0.04] #TODO
+      data/d_real/MiniVess: [3, 0.04] #TODO
+      data/d_real/TopCoW_ct: [4, 0.04] #TODO
+      data/d_real/TopCoW_mra: [5, 0.04] #TODO
+      data/d_real/TubeNet_2Photon: [6, 0.04] #TODO
+      data/d_real/TubeNet_MRI: [7, 0.04] #TODO
+      data/d_real/TubeTK: [8, 0.04] #TODO
+      data/d_real/VesselExpress_Figure2: [9, 0.04] #TODO
+      data/d_real/VesselExpress_Heart: [10, 0.04] #TODO
+      data/d_real/VesselExpress_Bladder: [11, 0.04] #TODO
+      data/d_real/MSD_Task8: [12, 0.04] #TODO
+      data/d_real/OCTA_no_rot: [13, 0.04] #TODO
+      data/d_real/CSD: [14, 0.04] #TODO
+      # data/d_real/HRKidney_thres: [15, 0.04] #TODO
+      # /path/to/d_real/VesSAP_anno_c0_no_rot: [19, 0.021875] #TODO
+      # /path/to/d_real/VesSAP_anno_c1_no_rot: [20, 0.021875] #TODO
       # /path/to/d_real/BvEM: [2, 0.035] #TODO
-      # /path/to/d_real/MSD_Task8: [10, 0.035] #TODO
-      # /path/to/d_real/OCTA_no_rot: [12, 0.035] #TODO
+      # /path/to/d_real/DeepVesselNet_syncrotone: [5, 0.04375] #TODO
+      # /path/to/d_real/DeepVesselNet_tof_mra: [6, 0.04375] #TODO
+      # /path/to/d_real/HiP-CT: [8, 0.04375] #TODO
+      # /path/to/d_real/Lightsheet_no_rot: [9, 0.04375] #TODO
       # /path/to/d_real/SMILE: [13, 0.035] #TODO
 
     LAYERS: 1

@@ -4,9 +4,9 @@ defaults:
   - _self_
 
 # i/o
-image_path: tests/MWA20220519a/vesselfm_all_pt/04_FILTERED
+image_path: /workspace_QMRI/USERS_CODE/hsalles/12_vesselFM/vesselFM/tests/MWA20220519a/RESAMPLED
 image_file_ending: nii.gz
-output_folder: tests/MWA20220519a/vesselfm_all_pt/05_VESSELS
+output_folder: /workspace_QMRI/USERS_CODE/hsalles/12_vesselFM/vesselFM/tests/MWA20220519a/VESSELS_OUR
 file_app: ""
 
 mask_path: null
@@ -14,10 +14,10 @@ round_to: 2
 
 # model & ckpt
 device: cuda:0
-ckpt_path: /path/to/ckpt.pt
+ckpt_path: runs/rmsbvessel/260717a/pretrain_260717a_last.ckpt
 
 # sliding window inferer
-batch_size: 8
+batch_size: 16
 patch_size: [128, 128, 128]
 overlap: 0.5
 mode: "constant"
@@ -42,7 +42,7 @@ transforms_config:
 
 # test time augmentation
 tta:
-  scales: [0.2, 0.5, 1]
+  scales: [0.2, 0.5, 1, 1.5]
   invert: true
   invert_mean_thresh: 0.1
   equalize_hist: false
@@ -51,7 +51,7 @@ tta:
 # post-processing
 post:
   apply: true
-  small_objects_min_size: 1000
+  small_objects_min_size: 500
   small_objects_connectivity: 3
 
 # merging

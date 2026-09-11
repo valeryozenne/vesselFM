@@ -25,7 +25,7 @@ defaults:
   - _self_
 
 input_size: [128, 128, 128]
-path: /path/to/d_real #TODO
+path: data/d_real #TODO
 generate_datasets:
   [
     3Dircadb1,
@@ -53,26 +53,27 @@ generate_datasets:
     # MSD_Task8
   ]
 cpus: 64
+generate_nifti: false # pour les images de validation, mettre à true
 
 dataset:
   3Dircadb1:
-    num_samples: 5000
-    path: /path/to/preprocessed/3Dircadb1 # TODO
-  DeepVess:
-    num_samples: 5000
-    path: /path/to/preprocessed/DeepVess # TODO
-  DeepVesselNet_syncrotone:
     num_samples: 10000
+    path: data/converted_real/3Dircadb1 # TODO
+  DeepVess:
+    num_samples: 10000
+    path: data/converted_real/DeepVess # TODO
+  DeepVesselNet_syncrotone:
+    num_samples: 1000
     path: /path/to/preprocessed/DeepVesselNet_syncrotone # TODO
   DeepVesselNet_tof_mra:
-    num_samples: 10000
+    num_samples: 1000
     path: /path/to/preprocessed/DeepVesselNet_tof_mra # TODO
   HiP-CT:
-    num_samples: 50000
+    num_samples: 5000
     path: /path/to/preprocessed/HiP-CT # TODO
   HRKidney:
     num_samples: 50000
-    path: /path/to/preprocessed/HR-Kidney # TODO
+    path: data/converted_real/HR-Kidney # TODO
   Lightsheet_no_rot:
     num_samples: 50000
     path: /path/to/preprocessed/lightsheet # TODO
@@ -81,26 +82,26 @@ dataset:
       rotation_range: [0.175, 0.0, 0.0]
       use_percentiles_intensity_scaling: True
   MiniVess:
-    num_samples: 50000
-    path: /path/to/preprocessed/MiniVess # TODO
+    num_samples: 10000
+    path: data/converted_real/MiniVess # TODO
   TubeNet_2Photon:
     num_samples: 1000
-    path: /path/to/preprocessed/TubeNet_2Photon # TODO
+    path: data/converted_real/tubenet_2Photon # TODO
   TubeNet_MRI:
     num_samples: 5000
-    path: /path/to/preprocessed/TubeNet_MRI # TODO
+    path: data/converted_real/tubenet_MRI # TODO
   TubeTK:
-    num_samples: 50000
-    path: /path/to/preprocessed/TubeTK # TODO
+    num_samples: 10000
+    path: data/converted_real/TubeTK # TODO
   VesselExpress_Figure2:
     num_samples: 10000
-    path: /path/to/preprocessed/VesselExpress_Figure2 # TODO
+    path: data/converted_real/VesselExpress_Figure2 # TODO
   VesselExpress_Heart:
     num_samples: 10000
-    path: /path/to/preprocessed/VesselExpress_Heart # TODO
+    path: data/converted_real/VesselExpress_Heart # TODO
   VesselExpress_Bladder:
     num_samples: 10000
-    path: /path/to/preprocessed/VesselExpress_Bladder # TODO
+    path: data/converted_real/VesselExpress_Bladder # TODO
   VesSAP_anno_c0_no_rot:
     num_samples: 10000
     path: /path/to/preprocessed/VesSAP_anno_C00 # TODO
@@ -117,25 +118,25 @@ dataset:
       use_percentiles_intensity_scaling: True
   CSD:
     num_samples: 10000
-    path: /path/to/preprocessed/Cerebrovascular_Segmentation_Dataset # TODO
+    path: data/converted_real/cerebrovascular_segmentation_dataset # TODO
   TopCoW_ct:
     num_samples: 10000
-    path: /path/to/preprocessed/TopCoW_ct # TODO
+    path: data/converted_real/TopCoW_ct # TODO
   TopCoW_mra:
     num_samples: 10000
-    path: /path/to/preprocessed/TopCoW_mra # TODO
+    path: data/converted_real/TopCoW_mra # TODO
   OCTA_no_rot:
-    num_samples: 50000
-    path: /path/to/preprocessed/OCTA # TODO
+    num_samples: 5000
+    path: data/converted_real/octa # TODO
     transforms_config:
         p_flip: [0.0, 0.5, 0.5]
         rotation_range: [0.175, 0.0, 0.0]
   SMILE:
-    num_samples: 5000
+    num_samples: 500
     path: /path/to/preprocessed/SMILE # TODO
   MSD_Task8:
-    num_samples: 50000
-    path: /path/to/preprocessed/MSD_Task8 # TODO
+    num_samples: 5000
+    path: data/converted_real/msd_task8 # TODO
   BvEM:
-    num_samples: 50000
-    path: /path/to/preprocessed/BvEM # TODO
+    num_samples: 5000
+    path: data/converted_real/bvem # TODO

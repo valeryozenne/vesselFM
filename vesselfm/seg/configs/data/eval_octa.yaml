@@ -4,4 +4,5 @@ defaults:
 
 OCTA:
   sample_prop: 1
-  path: /path/to/eval_set/OCTA #TODO
+  path: data/finetune/octa #TODO
+  file_format: "nii"

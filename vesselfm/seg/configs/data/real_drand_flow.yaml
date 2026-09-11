@@ -1,13 +1,13 @@
 defaults:
   - default_pretrain@domain_randomization
-  - default_pretrain@flow_matching
+  # - default_pretrain@flow_matching
   - default_pretrain@3Dircadb1
   - default_pretrain@DeepVess
-  - default_pretrain@DeepVesselNet_syncrotone
-  - default_pretrain@DeepVesselNet_tof_mra
-  - default_pretrain@HiP-CT
-  - default_pretrain@HRKidney
-  - default_pretrain@Lightsheet
+  # - default_pretrain@DeepVesselNet_syncrotone
+  # - default_pretrain@DeepVesselNet_tof_mra
+  # - default_pretrain@HiP-CT
+  # - default_pretrain@HRKidney
+  # - default_pretrain@Lightsheet
   - default_pretrain@MiniVess
   - default_pretrain@TopCoW_MRA
   - default_pretrain@TopCoW_CT
@@ -18,8 +18,8 @@ defaults:
   - default_pretrain@VesselExpress_Figure2
   - default_pretrain@VesselExpress_Heart
   - default_pretrain@VesselExpress_Bladder
-  - default_pretrain@VesSAP_anno_c0
-  - defaul_pretrain@VesSAP_anno_c1
+  # - default_pretrain@VesSAP_anno_c0
+  # - default_pretrain@VesSAP_anno_c1
   # - default_pretrain@OCTA
   # - default_pretrain@BvEM
   # - default_pretrain@SMILE
@@ -28,88 +28,88 @@ defaults:
 
 domain_randomization:
   sample_prop: 0.7
-  path: /path/to/d_drand #TODO
+  path: data/d_drand/d_drand #TODO
 
-flow_matching:
-  sample_prop: 0.1
-  path: /path/to/d_flow #TODO
-  filter_dataset_IDs: [2, 10, 12, 13]
+# flow_matching:
+#   sample_prop: 0.1
+#   path: data/d_flow #TODO
+#   filter_dataset_IDs: [2, 10, 12, 13]
 
 3Dircadb1:
   sample_prop: 0.0134
-  path: /path/to/d_real/3Dircadb1 #TODO
+  path: data/d_real/3Dircadb1 #TODO
 
 DeepVess:
   sample_prop: 0.0134
-  path: /path/to/d_real/DeepVess #TODO
+  path: data/d_real/DeepVess #TODO
 
-DeepVesselNet_syncrotone:
-  sample_prop: 0.0134
-  path: /path/to/d_real/DeepVesselNet_syncrotone #TODO
+# DeepVesselNet_syncrotone:
+#   sample_prop: 0.0134
+#   path: /path/to/d_real/DeepVesselNet_syncrotone #TODO
 
-DeepVesselNet_tof_mra:
-  sample_prop: 0.0134
-  path: /path/to/d_real/DeepVesselNet_tof_mra #TODO
+# DeepVesselNet_tof_mra:
+#   sample_prop: 0.0134
+#   path: /path/to/d_real/DeepVesselNet_tof_mra #TODO
 
-HiP-CT:
-  sample_prop: 0.0134
-  path:  /path/to/d_real/HiP-CT #TODO
+# HiP-CT:
+#   sample_prop: 0.0134
+#   path:  /path/to/d_real/HiP-CT #TODO
 
-HRKidney:
-  sample_prop: 0.0134
-  path: /path/to/d_real/HRKidney_thresh #TODO
+# HRKidney:
+#   sample_prop: 0.0134
+#   path: /path/to/d_real/HRKidney_thresh #TODO
 
-Lightsheet:
-  sample_prop: 0.0134
-  path: /path/to/d_real/Lightsheet_no_rot #TODO
+# Lightsheet:
+#   sample_prop: 0.0134
+#   path: /path/to/d_real/Lightsheet_no_rot #TODO
 
 MiniVess:
   sample_prop: 0.0134
-  path: /path/to/d_real/MiniVess #TODO
+  path: data/d_real/MiniVess #TODO
 
 TopCoW_MRA:
   sample_prop: 0.0066
-  path: /path/to/d_real/TopCoW_mra #TODO
+  path: data/d_real/TopCoW_mra #TODO
 
 TopCoW_CT:
   sample_prop: 0.0066
-  path: /path/to/d_real/TopCoW_ct #TODO
+  path: data/d_real/TopCoW_ct #TODO
 
 TubeNet_MRI:
   sample_prop: 0.0133
-  path: /path/to/d_real/TubeNet_MRI #TODO
+  path: data/d_real/TubeNet_MRI #TODO
 
 TubeNet_2Photon:
   sample_prop: 0.0133
-  path: /path/to/d_real/TubeNet_2Photon #TODO
+  path: data/d_real/TubeNet_2Photon #TODO
 
 TubeTK:
   sample_prop: 0.0133
-  path: /path/to/d_real/TubeTK #TODO
+  path: data/d_real/TubeTK #TODO
 
 CSD:
   sample_prop: 0.0133
-  path: /path/to/d_real/CSD #TODO
+  path: data/d_real/CSD #TODO
 
 VesselExpress_Figure2:
   sample_prop: 0.0044
-  path: /path/to/d_real/VesselExpress_Figure2 #TODO
+  path: data/d_real/VesselExpress_Figure2 #TODO
 
 VesselExpress_Heart:
   sample_prop: 0.0044
-  path: /path/to/d_real/VesselExpress_Heart #TODO
+  path: data/d_real/VesselExpress_Heart #TODO
 
 VesselExpress_Bladder:
   sample_prop: 0.0044
-  path: /path/to/d_real/VesselExpress_Bladder #TODO
+  path: data/d_real/VesselExpress_Bladder #TODO
 
-VesSAP_anno_c0:
-  sample_prop: 0.0066
-  path: /path/to/d_real/VesSAP_anno_c0_no_rot #TODO
+# VesSAP_anno_c0:
+#   sample_prop: 0.0066
+#   path: /path/to/d_real/VesSAP_anno_c0_no_rot #TODO
 
-VesSAP_anno_c1:
-  sample_prop: 0.0066
-  path: /path/to/d_real/VesSAP_anno_c1_no_rot #TODO
+# VesSAP_anno_c1:
+#   sample_prop: 0.0066
+#   path: /path/to/d_real/VesSAP_anno_c1_no_rot #TODO
 
 # OCTA:
 #   sample_prop: 0.0013

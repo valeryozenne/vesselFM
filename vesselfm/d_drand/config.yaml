@@ -1,7 +1,7 @@
 DATA_GEN:
-  OUT_DIR: /path/to/d_drand  #TODO
-  DATASET_LABEL: /path/to/foreground_geom  #TODO
-  DATASET_BACKGROUND: /path/to/background #TODO
+  OUT_DIR: data/d_drand/d_drand  #TODO
+  DATASET_LABEL: data/d_drand/foreground/synthetic_cerebral_octa  #TODO
+  DATASET_BACKGROUND: data/d_drand/background #TODO
 
   IMG_SIZE: 128
   BATCH_SIZE: 16

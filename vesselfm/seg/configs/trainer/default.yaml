@@ -1,10 +1,10 @@
 lightning_trainer:
   _target_: lightning.pytorch.trainer.trainer.Trainer
   _partial_: True
-  val_check_interval: 1000
-  max_time: "00:12:00:00"
-  max_steps: 46000
-  max_epochs: -1
+  val_check_interval: 5000
+  max_time: "03:00:00:00"
+  max_steps: -1
+  max_epochs: 10
   accelerator: gpu
   enable_checkpointing: True
   precision: 16-mixed
@@ -46,6 +46,6 @@ lightning_module:
       scheduler:
         _target_: torch.optim.lr_scheduler.CosineAnnealingLR
         _partial_: True
-        T_max: 5000
+        T_max: 75125
         eta_min: 0.0
         last_epoch: -1

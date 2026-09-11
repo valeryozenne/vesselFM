@@ -4,4 +4,5 @@ defaults:
 
 BvEM:
   sample_prop: 1
-  path: /path/to/eval_set/BvEM #TODO
+  path: data/finetune/bvem #TODO
+  file_format: "npy"
