@@ -11,37 +11,32 @@ from torch.utils.data import Dataset
 
 class PretrainEvaluationDataset(Dataset):
     def __init__(self, data_path):
-        data_dir = Path(data_path).resolve()
-        self.val_data = {
-            "deepvess": [
-                torch.tensor(read_nifti(data_dir / "deepvess.nii"))[None],
-                torch.tensor(read_nifti(data_dir / "deepvess_mask.nii"))[None],
-            ],
-            "deepvesselnet": [
-                torch.tensor(read_nifti(data_dir / "deepvesselnet.nii"))[None],
-                torch.tensor(read_nifti(data_dir / "deepvesselnet_mask.nii"))[None],
-            ],
-            "lightsheet": [
-                torch.tensor(read_nifti(data_dir / "lightsheet.nii"))[None],
-                torch.tensor(read_nifti(data_dir / "lightsheet_mask.nii"))[None],
-            ],
-            "minivess": [
-                torch.tensor(read_nifti(data_dir / "minivess.nii"))[None],
-                torch.tensor(read_nifti(data_dir / "minivess_mask.nii"))[None],
-            ],
-            "tubetk": [
-                torch.tensor(read_nifti(data_dir / "tubetk.nii"))[None],
-                torch.tensor(read_nifti(data_dir / "tubetk_mask.nii"))[None],
-            ],
-        }
-        self._samples = list(self.val_data.keys())
+        self.data_dir = Path(data_path).resolve()
+        
+        self.image_dir = self.data_dir / "images"
+        self.mask_dir = self.data_dir / "masks"
+        
+        self.image_files = sorted(list(self.image_dir.glob("*.npy")))
+        
+        if len(self.image_files) == 0:
+            raise ValueError(f"Aucune image trouvée dans {self.image_dir}")
 
     def __len__(self):
-        return len(self._samples)
+        return len(self.image_files)
 
     def __getitem__(self, idx):
-        name = self._samples[idx]
-        image, mask = self.val_data[self._samples[idx]]
+        img_path = self.image_files[idx]
+        
+        mask_path = self.mask_dir / img_path.name
+        
+        if not mask_path.exists():
+            raise FileNotFoundError(f"Masque introuvable pour {img_path.name}")
+
+        image = torch.from_numpy(np.load(img_path)).float()[None]
+        mask = torch.from_numpy(np.load(mask_path)).long()[None]
+        
+        name = img_path.name
+
         return image, mask, name
         
 
@@ -113,31 +108,49 @@ class Evaluator:
         metrics = {}
         pred_seg_thresh = (pred_seg >= threshold).float().cpu()
 
+        # Extraire les arrays numpy une seule fois pour alléger la mémoire
+        gt_flat = gt_seg.flatten().cpu().clone().detach().numpy()
+        pred_flat = pred_seg.flatten().cpu().clone().detach().numpy()
+
         # estimate metrics
         tn, fp, fn, tp = confusion_matrix(
-            gt_seg.flatten().cpu().clone().numpy(),
+            gt_flat,
             pred_seg_thresh.flatten().cpu().clone().numpy(),
             labels=[0, 1],
         ).ravel()
 
+        # Sécurisation du mode fast
         if fast:
-            metrics["dice"] = (2 * tp) / (2 * tp + fp + fn)
+            if (2 * tp + fp + fn) == 0:
+                metrics["dice"] = 1.0  # Prédiction parfaite d'une image vide
+            else:
+                metrics["dice"] = (2 * tp) / (2 * tp + fp + fn)
             return metrics
 
-        roc_auc = roc_auc_score(
-            gt_seg.flatten().cpu().clone().detach().numpy(),
-            pred_seg.flatten().cpu().clone().detach().numpy(),
-        )
+        # 1. SÉCURISATION AUC & PR : Vérifier qu'il y a au moins 2 classes (fond + vaisseau)
+        if len(np.unique(gt_flat)) > 1:
+            roc_auc = roc_auc_score(gt_flat, pred_flat)
+            pr_auc = average_precision_score(gt_flat, pred_flat)
+        else:
+            roc_auc = float('nan')
+            pr_auc = float('nan')
 
-        pr_auc = average_precision_score(
-            gt_seg.flatten().cpu().clone().detach().numpy(),
-            pred_seg.flatten().cpu().clone().detach().numpy(),
-        )
-
-        cldice = self.cl_dice(
-            pred_seg_thresh.squeeze().cpu().clone().detach().byte().numpy(),
-            gt_seg.squeeze().cpu().clone().detach().byte().numpy(),
-        )
+        # SÉCURISATION DU clDice
+        # Si la vérité terrain ET la prédiction sont toutes les deux vides (aucun vaisseau)
+        if (tp + fp + fn) == 0:
+            cldice = 1.0  # Prédiction parfaite d'une image vide
+        
+        # Si la vérité terrain est vide mais qu'il y a de fausses prédictions,
+        # OU si des vaisseaux existent mais que le modèle n'a rien prédit du tout
+        elif (tp + fn) == 0 or (tp + fp) == 0:
+            cldice = 0.0  # Le chevauchement est nul
+            
+        # Sinon, il y a des vaisseaux à comparer, on calcule normalement
+        else:
+            cldice = self.cl_dice(
+                pred_seg_thresh.squeeze().cpu().clone().detach().byte().numpy(),
+                gt_seg.squeeze().cpu().clone().detach().byte().numpy(),
+            )
 
         betti_0_error, betti_1_error = self.betti_number_error(
             gt_seg.squeeze().cpu().clone().detach().int().numpy(),
@@ -147,14 +160,23 @@ class Evaluator:
             pred_seg_thresh.squeeze().cpu().clone().detach().int().numpy()
         )
 
-        metrics["recall_tpr_sensitivity"] = tp / (tp + fn)
-        metrics["fpr"] = fp / (fp + tn)
-        metrics["precision"] = tp / (tp + fp)
-        metrics["specificity"] = tn / (tn + fp)
-        metrics["jaccard_iou"] = tp / (tp + fp + fn)
-        metrics["dice"] = (2 * tp) / (2 * tp + fp + fn)
+        # 2. SÉCURISATION DES DIVISIONS PAR ZÉRO
+        metrics["recall_tpr_sensitivity"] = tp / (tp + fn) if (tp + fn) > 0 else float('nan')
+        metrics["fpr"] = fp / (fp + tn) if (fp + tn) > 0 else float('nan')
+        metrics["precision"] = tp / (tp + fp) if (tp + fp) > 0 else float('nan')
+        metrics["specificity"] = tn / (tn + fp) if (tn + fp) > 0 else float('nan')
+        
+        # Logique spéciale pour Dice et IoU : si tout est vide et que la prédiction 
+        # est vide, le modèle a 100% raison.
+        if (2 * tp + fp + fn) == 0:
+            metrics["jaccard_iou"] = 1.0
+            metrics["dice"] = 1.0
+        else:
+            metrics["jaccard_iou"] = tp / (tp + fp + fn)
+            metrics["dice"] = (2 * tp) / (2 * tp + fp + fn)
+
         metrics["cldice"] = cldice
-        metrics["accuracy"] = (tp + tn) / (tn + fp + tp + fn)
+        metrics["accuracy"] = (tp + tn) / (tn + fp + tp + fn) if (tn + fp + tp + fn) > 0 else float('nan')
         metrics["roc_auc"] = roc_auc
         metrics["pr_auc_ap"] = pr_auc
         metrics["betti_0_error"] = betti_0_error
@@ -162,6 +184,7 @@ class Evaluator:
         metrics["betti_0"] = betti_0
         metrics["betti_1"] = betti_1
         metrics["betti_2"] = betti_2
+        
         return metrics
 
 

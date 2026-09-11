@@ -40,9 +40,21 @@ class UnionDataset(Dataset):
             probs.append(dataset_config.sample_prop)
 
         # ensure that probs sum up to 1
-        probs = torch.tensor(probs)
-        self.probs = probs / probs.sum()
+        probs = torch.tensor(probs, dtype=torch.float32) # 1. Forcer le type float
         
+        # 2. Vérifier qu'il n'y a pas de valeurs négatives
+        if (probs < 0).any():
+            raise ValueError("Erreur : La configuration contient un sample_prop négatif.")
+            
+        probs_sum = probs.sum()
+        
+        # 3. Sécuriser la division par zéro
+        if probs_sum == 0:
+            logger.warning("La somme des sample_prop est de 0. Utilisation d'une distribution uniforme.")
+            self.probs = torch.ones_like(probs) / len(probs)
+        else:
+            self.probs = probs / probs_sum
+
     def __len__(self):
         return self.len
 
@@ -66,5 +78,33 @@ class UnionDataset(Dataset):
             img = dataset['reader'].read_images(str(img_path))[0].astype(np.float32)
             mask = dataset['reader'].read_images(str(mask_path))[0].astype(bool)
 
-            transformed = dataset['transforms']({'Image': img, 'Mask': mask})
+            # Vérifier si l'image ou le masque sont corrompus par des NaN
+            if np.isnan(img).any() or np.isnan(mask).any():
+                print(f"ATTENTION: Valeurs NaN détectées dans {img_path}")
+
+            # --- DEBUG BLOCK ---
+            # Vérifier si l'image est vide dès le chargement
+            if img.size == 0 or 0 in img.shape:
+                raise ValueError(f"CRASH : L'image chargée est vide ! Fichier : {img_path}")
+
+            # Si l'image n'est pas vide ici, c'est qu'une de vos transformations 
+            # (avant ScaleIntensityRangePercentilesd) la rend vide.
+            # -------------------
+
+            # transformed = dataset['transforms']({'Image': img, 'Mask': mask})
+            data_dict = {'Image': img, 'Mask': mask}
+
+            # Vérifier si le masque est complètement vide (aucun vaisseau)
+            # OU si l'image est toute noire
+            is_empty_foreground = not mask.any() or not img.any()
+
+            # Appliquer les transformations une par une manuellement
+            for t in dataset['transforms'].transforms:
+                # Si l'image est vide, on ignore spécifiquement le recadrage pour éviter le crash
+                if is_empty_foreground and "CropForegroundd" in t.__class__.__name__:
+                    continue 
+                    
+                data_dict = t(data_dict)
+
+            transformed = data_dict
             return transformed['Image'], transformed['Mask'] > 0

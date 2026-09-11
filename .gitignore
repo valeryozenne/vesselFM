@@ -12,3 +12,7 @@ runs
 ckpts
 outputs
 wandb
+tests
+sauron
+logs
+dice.sh

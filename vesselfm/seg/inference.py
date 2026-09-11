@@ -25,17 +25,32 @@ logger = logging.getLogger(__name__)
 def load_model(cfg, device):
     try:
         logger.info(f"Loading model from {cfg.ckpt_path}.")
-        ckpt = torch.load(Path(cfg.ckpt_path), map_location=device, weights_only=True)
-    except:
+        ckpt = torch.load(Path(cfg.ckpt_path), map_location=device, weights_only=False)
+    except Exception as e:
+        logger.warning(f"Failed to load model from {cfg.ckpt_path} due to {e}. Attempting to load from Hugging Face Hub.")
         logger.info(f"Loading model from Hugging Face.")
         hf_hub_download(repo_id='bwittmann/vesselFM', filename='meta.yaml') # required to track downloads
         ckpt = torch.load(
-            hf_hub_download(repo_id='bwittmann/vesselFM', filename='vesselFM_all.pt'),
-            map_location=device, weights_only=True
+            hf_hub_download(repo_id='bwittmann/vesselFM', filename='vesselFM_base.pt'),
+            map_location=device, weights_only=False
         )
 
     model = hydra.utils.instantiate(cfg.model)
-    model.load_state_dict(ckpt)
+    
+    # 1. On extrait le dictionnaire des poids s'il vient de PyTorch Lightning
+    state_dict = ckpt.get("state_dict", ckpt)
+    
+    # 2. (Optionnel mais recommandé) PyTorch Lightning ajoute souvent un préfixe 
+    # "model." ou "net." aux noms des couches. On le retire pour que ça corresponde au DynUNet.
+    clean_state_dict = {}
+    for k, v in state_dict.items():
+        # Enlève le préfixe s'il existe
+        new_key = k.replace("model.", "").replace("net.", "") 
+        clean_state_dict[new_key] = v
+
+    # 3. On charge les poids nettoyés
+    model.load_state_dict(clean_state_dict)
+    
     return model
 
 def write_nifti(data, file_path, spacing=None):

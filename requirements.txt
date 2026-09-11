@@ -11,6 +11,7 @@ numpy==1.26.4
 matplotlib==3.7.1
 tensorboard==2.14.0
 huggingface_hub==0.29.1
+imagecodecs==2024.6.1
 h5py
 tifffile
 pylibtiff
