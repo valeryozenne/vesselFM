@@ -234,52 +234,56 @@ class Trainer(object):
     def train(self):
         start_time = time.time()
         accumulated_loss = []
-        for epoch in range(self.epochs):
-            for itera, batch in enumerate(self.dl):
-                image, mask, class_id = batch
-                image, mask, class_id = image.to(device=self.device), mask.to(device=self.device), class_id.to(device=self.device)
+        try:
+            for epoch in range(self.epochs):
+                for itera, batch in enumerate(self.dl):
+                    image, mask, class_id = batch
+                    image, mask, class_id = image.to(device=self.device), mask.to(device=self.device), class_id.to(device=self.device)
 
-                if not self.class_cond:
-                    class_id = None
-                
-                # classifier free guidance
-                if self.cfg:
-                    class_id[torch.rand(self.batch_size) < self.cfg_p_drop] = -1
+                    if not self.class_cond:
+                        class_id = None
+                    
+                    # classifier free guidance
+                    if self.cfg:
+                        class_id[torch.rand(self.batch_size) < self.cfg_p_drop] = -1
 
-                loss = self.model(image, condition_tensors=mask, y=class_id)
-                loss.backward()
+                    loss = self.model(image, condition_tensors=mask, y=class_id)
+                    loss.backward()
 
-                print(f'e{epoch}, i{itera}: {loss.item()}')
-                accumulated_loss.append(loss.item())
+                    print(f'e{epoch}, i{itera}: {loss.item()}')
+                    accumulated_loss.append(loss.item())
 
-                average_loss = np.mean(accumulated_loss)
-                end_time = time.time()
-                self.writer.add_scalar("training_loss", average_loss, self.step)
+                    average_loss = np.mean(accumulated_loss)
+                    end_time = time.time()
+                    self.writer.add_scalar("training_loss", average_loss, self.step)
 
-                self.opt.step()
-                self.opt.zero_grad()
+                    self.opt.step()
+                    self.opt.zero_grad()
 
-                if self.step % self.update_ema_every == 0:
-                    self.step_ema()
+                    if self.step % self.update_ema_every == 0:
+                        self.step_ema()
 
-                if self.step != 0 and self.step % self.save_and_sample_every == 0:
-                    milestone = self.step // self.save_and_sample_every
+                    if self.step != 0 and self.step % self.save_and_sample_every == 0:
+                        milestone = self.step // self.save_and_sample_every
 
-                    # sample an image
-                    images = self.ema_model.sample(condition_tensors=mask, y=class_id)
+                        # sample an image
+                        images = self.ema_model.sample(condition_tensors=mask, y=class_id)
 
-                    for idx, (i, m, ci) in enumerate(zip(images, mask, class_id)):  # TODO: breaks if no class_cond / class_id == None
-                        nifti_img = nib.Nifti1Image(i.cpu().numpy().squeeze(), affine=np.eye(4))
-                        nib.save(nifti_img, str(self.results_folder / f'sample-{milestone}-i-{idx}-class-{ci}.nii.gz'))
-                        nifti_mask = nib.Nifti1Image(m.cpu().numpy().squeeze(), affine=np.eye(4))
-                        nib.save(nifti_mask, str(self.results_folder / f'sample-{milestone}-m-{idx}-class-{ci}.nii.gz'))
+                        for idx, (i, m, ci) in enumerate(zip(images, mask, class_id)):  # TODO: breaks if no class_cond / class_id == None
+                            nifti_img = nib.Nifti1Image(i.cpu().numpy().squeeze(), affine=np.eye(4))
+                            nib.save(nifti_img, str(self.results_folder / f'sample-{milestone}-i-{idx}-class-{ci}.nii.gz'))
+                            nifti_mask = nib.Nifti1Image(m.cpu().numpy().squeeze(), affine=np.eye(4))
+                            nib.save(nifti_mask, str(self.results_folder / f'sample-{milestone}-m-{idx}-class-{ci}.nii.gz'))
 
-                    if milestone % 5 == 0:  # save only ckpts for every 5th milestone
-                        self.save(milestone)
+                        if milestone % 5 == 0:  # save only ckpts for every 5th milestone
+                            self.save(milestone)
 
-                self.step += 1
+                    self.step += 1
+        except KeyboardInterrupt:
+            print('training interrupted')
+        else:
+            print('training completed')
 
-        print('training completed')
         end_time = time.time()
         execution_time = (end_time - start_time)/3600
         self.writer.add_hparams(

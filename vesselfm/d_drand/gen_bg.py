@@ -1,6 +1,7 @@
 import random
 import itertools
 from pathlib import Path
+from tqdm import tqdm
 
 import torch
 import torch.nn.functional as F
@@ -46,8 +47,8 @@ class BackgroundGen3D():
     def __call__(self):
         output_imgs = []
 
-        for idx in range(self.num_imgs):
-            print(f'Generating img {idx}.')
+        for idx in tqdm(range(self.num_imgs), desc=f'Generating {self.img_type}'):
+            tqdm.write(f'Generating img {idx}.')
 
             # init output img
             output_img = np.zeros(self.shape)
@@ -188,7 +189,7 @@ if __name__ == '__main__':
         mode_bg_geom=None,  # TODO
         mode_bg_noise='perlin', # TODO
         num_imgs=20000,  # TODO
-        out_dir='path/to/output/dir',  # TODO
+        out_dir='data/d_drand/background',  # TODO
 
         num_voronoi_min=10, num_voronoi_max=30,
         num_spheres_min=10, num_spheres_max=30, rad_min=20, rad_max=50, max_attempts=1000,
@@ -203,4 +204,4 @@ if __name__ == '__main__':
         ax.axis('off')
 
     plt.tight_layout()
-    plt.savefig('./bg_sample.png')
+    plt.savefig('data/d_drand/bg_sample.png')

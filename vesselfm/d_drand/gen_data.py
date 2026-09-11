@@ -2,6 +2,7 @@ import json
 import random
 from pathlib import Path
 from datetime import datetime
+from tqdm import tqdm
 
 import yaml
 from monai.utils import set_determinism
@@ -71,7 +72,7 @@ class DRandGen(Dataset):
         for data_dir in data_dirs:
             files = data_dir.iterdir()
             for file in files:
-                if 'mask' in str(file):
+                if 'seg' in str(file):
                     self._seg.append(file)
                 elif 'ang' in str(file):
                     self._ang.append(file)
@@ -475,7 +476,6 @@ if __name__ == '__main__':
     config = load_config(dict=False)
     loader = build_loader(config)
     path_to_store_data = Path(config.DATA_GEN.OUT_DIR)
-
     labels, labels_int_mod = next(iter(loader))
     fig, axes = plt.subplots(4, 4, figsize=(10, 10))
 
@@ -491,6 +491,8 @@ if __name__ == '__main__':
     # generate samples
     num_samples = 500000
     idx = 0
+    print(f"DataLoader length: {num_samples}")
+    pbar = tqdm(total=num_samples)
     for sample in iter(loader):
         labels, labels_int_mod = sample
 
@@ -498,7 +500,7 @@ if __name__ == '__main__':
 
             if idx >= num_samples:
                 break
-            print(idx)
+            # tqdm.write(str(idx))
 
             path_to_store_data_sample = path_to_store_data / str(idx)
             path_to_store_data_sample.mkdir(parents=True, exist_ok=True)
@@ -507,3 +509,4 @@ if __name__ == '__main__':
             np.save(path_to_store_data_sample / 'img.npy', label_int_mod.squeeze().numpy().astype(np.float16))
 
             idx += 1
+            pbar.update(1)

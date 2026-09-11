@@ -14,6 +14,8 @@ def convert_CSD(input_folder: str, output_dir: str):
 
     print(f"Converting Images...")
     for sample in os.listdir(image_dir):
+        if not sample.endswith(".nii.gz"):
+            continue
         print(f"Converting {sample}...")
         image = sitk.ReadImage(os.path.join(image_dir, sample))
         array, metadata = convert_sitk_image(image)

@@ -17,8 +17,8 @@ from vesselfm.d_flow.trainer import FlowMatching, Trainer
 def get_meta_data():
     meta_data = {}
     meta_data['git_commit_hash'] = subprocess.check_output(['git', 'rev-parse', '--short', 'HEAD']).decode('ascii').strip()
-    meta_data['python_version'] = sys.version.splitlines()[0]
-    meta_data['gcc_version'] = sys.version.splitlines()[1]
+    meta_data['python_version'] = sys.version.rsplit(" ", 1)[0]
+    meta_data['gcc_version'] = sys.version.rsplit(" ", 1)[1]
     meta_data['pytorch_version'] = torch.__version__
     meta_data['host_name'] = socket.gethostname()
     return meta_data

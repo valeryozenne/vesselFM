@@ -37,7 +37,7 @@ class HelperDataset(Dataset):
 
         img = self._reader.read_images(path_img)[0].astype(np.float32)
         label = self._reader.read_images(path_label)[0].astype(bool)
-        
+
         transformed_data = self._transforms({'Image': img, 'Mask': label})
         img, label = transformed_data['Image'], transformed_data['Mask']
         return img, label
@@ -143,29 +143,31 @@ def pad_or_resize(img, is_mask=False, upsampled=False):
         upsampled = True
     return img, upsampled
 
-def create_sample(sample, dataset, path, dataset_config, generate_nifti=False):
-    np.random.seed(sample)
+def create_sample(num_samples, dataset, path, dataset_config, generate_nifti=False):
+    np.random.seed(0)
     skipped = 0
     transforms = get_transforms(dataset_config.transforms_config)
 
-    while True:
-        rand = np.random.randint(0, len(dataset))
+    rand = 0
+    print(f"Loading image...")
+    big_image, big_mask = dataset[rand]
+    big_image, big_mask = crop_fg(big_image, big_mask)
+
+    # skip samples with little annotations
+    if (skipped <= 5 and big_mask.sum() < (0.01 * np.prod(big_mask.shape))) or (skipped > 5 and big_mask.sum() < (0.005 * np.prod(big_mask.shape))):
+        print(f"{big_mask.sum()/ np.prod(big_mask.shape)} < {0.01} or {big_mask.sum()/ np.prod(big_mask.shape)} < {0.005} skipped {skipped}")
+        skipped += 1
+        sys.exit(1)
+
+    big_image, upsampled = pad_or_resize(big_image)
+    big_mask, _ = pad_or_resize(big_mask, is_mask=True)
+    assert big_mask.shape == big_image.shape, "shape diff between image and mask"
+
+    print(f"image shape: {big_image.shape}, mask shape: {big_mask.shape}")
+
+    for sample in range(num_samples):
         print(f"Creating sample {sample} from id {rand}.")
-
-        image, mask = dataset[rand]
-        image, mask = crop_fg(image, mask)
-
-        # skip samples with little annotations
-        if (skipped <= 5 and mask.sum() < (0.01 * np.prod(mask.shape))) or (skipped > 5 and mask.sum() < (0.005 * np.prod(mask.shape))):
-            print(f"{mask.sum()/ np.prod(mask.shape)} < {0.01} or {mask.sum()/ np.prod(mask.shape)} < {0.005} skipped {skipped}")
-            skipped += 1
-            continue
-
-        image, upsampled = pad_or_resize(image)
-        mask, _ = pad_or_resize(mask, is_mask=True)
-        assert mask.shape == image.shape, "shape diff between image and mask"
-
-        res_dict = transforms({"image": image, "mask": mask})
+        res_dict = transforms({"image": big_image, "mask": big_mask})
         image, mask = res_dict["image"], res_dict["mask"] > 0.0
 
         if upsampled or path.endswith("BvEM"):
@@ -185,7 +187,7 @@ def create_sample(sample, dataset, path, dataset_config, generate_nifti=False):
             nib.save(image, f"{path}/{sample}/img.nii")
             mask = nib.Nifti1Image(mask.astype(np.uint8), affine=np.eye(4), dtype=np.uint8)
             nib.save(mask, f"{path}/{sample}/mask.nii")
-        return
+    return
 
 
 def create_dataset(dataset, key, config, path):
@@ -195,11 +197,8 @@ def create_dataset(dataset, key, config, path):
     print(f"Creating dataset in {path} with {num_samples} samples")
     os.makedirs(path, exist_ok=True)
 
-    with mp.Pool(processes=config.cpus) as pool:
-        pool.starmap(
-            create_sample,
-            [(sample, dataset, path, config.dataset[key], config.generate_nifti) for sample in range(num_samples)],
-        )
+    create_sample(num_samples, dataset, path, config.dataset[key], config.generate_nifti)
+
     print(f"Done with dataset at {path}", '\n')
 
 

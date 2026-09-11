@@ -47,7 +47,8 @@ def main(folder:str, out_folder:str):
         preprocessing.convert_tUbeNet(folder, out_folder)
     elif basename.lower() == "lightsheet":
         preprocessing.convert_Lightsheet(folder, out_folder)
-
+    else:
+        print(f"Folder {folder} not recognized. Please check the folder name and try again.")
 
 if __name__ == "__main__":
     sys.stdout = open(sys.stdout.fileno(), mode='w', buffering=1)

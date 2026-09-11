@@ -27,7 +27,7 @@ def convert_TopCoW(input_folder: str, output_dir: str, extract_full_images: bool
     type_ = "whole" if extract_full_images else "roi"
 
     for folder in os.listdir(input_folder):
-        if "val" in folder or not os.path.isdir(os.path.join(input_folder, folder)):
+        if "val" in folder.lower() or not os.path.isdir(os.path.join(input_folder, folder)):
             continue
         print(f"Converting {folder}...")
         
@@ -36,9 +36,9 @@ def convert_TopCoW(input_folder: str, output_dir: str, extract_full_images: bool
 
         print(f"Converting Images...")
         for sample in os.listdir(image_dir):
-            if type_ not in sample:
-                print(f"Skipping {sample}...")
-                continue
+            # if type_ not in sample:
+            #     print(f"Skipping {sample}...")
+            #     continue
             print(f"Converting {sample}...")
             image = sitk.ReadImage(os.path.join(image_dir, sample))
             
@@ -55,9 +55,9 @@ def convert_TopCoW(input_folder: str, output_dir: str, extract_full_images: bool
 
         print(f"Converting Masks...")
         for sample in os.listdir(mask_dir):
-            if type_ not in sample:
-                print(f"Skipping {sample}...")
-                continue
+            # if type_ not in sample:
+            #     print(f"Skipping {sample}...")
+            #     continue
             print(f"Converting {sample}...")
             mask = sitk.ReadImage(os.path.join(mask_dir, sample))
             array, metadata = convert_sitk_image(mask)
