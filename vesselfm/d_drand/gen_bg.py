@@ -185,11 +185,22 @@ class BackgroundGen3D():
 if __name__ == '__main__':
     import matplotlib.pyplot as plt
 
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--mode_bg_geom', type=str, default=None, choices=[None, 'voronoi', 'spheres'])
+    parser.add_argument('--mode_bg_noise', type=str, default='perlin', choices=[None, 'worley', 'perlin', 'gaussian', 'plain'])
+    parser.add_argument('--num_imgs', type=int, default=20000)
+    parser.add_argument('--out_dir', type=str, default='data/d_drand/background')
+    args = parser.parse_args()
+
+    # ensure output directory exists
+    Path(args.out_dir).mkdir(parents=True, exist_ok=True)
+
     imgs = BackgroundGen3D(
-        mode_bg_geom=None,  # TODO
-        mode_bg_noise='perlin', # TODO
-        num_imgs=20000,  # TODO
-        out_dir='data/d_drand/background',  # TODO
+        mode_bg_geom=args.mode_bg_geom,
+        mode_bg_noise=args.mode_bg_noise,
+        num_imgs=args.num_imgs,
+        out_dir=args.out_dir,
 
         num_voronoi_min=10, num_voronoi_max=30,
         num_spheres_min=10, num_spheres_max=30, rad_min=20, rad_max=50, max_attempts=1000,
