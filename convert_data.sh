@@ -21,3 +21,5 @@ python vesselfm/d_real/dataset_conversion.py /workspace_QMRI/USERS_CODE/hsalles/
 python vesselfm/d_real/dataset_conversion.py /workspace_QMRI/USERS_CODE/hsalles/12_vesselFM/tubenet data/converted_real
 
 python vesselfm/d_real/dataset_conversion.py /workspace_QMRI/USERS_CODE/hsalles/12_vesselFM/HR-Kidney data/converted_real
+
+python vesselfm/d_real/dataset_conversion.py /workspace_QMRI/USERS_CODE/hsalles/12_vesselFM/SMILE data/converted_real

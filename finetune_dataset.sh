@@ -4,6 +4,10 @@ for i in {0..295}; do
     mkdir -p data/finetune/msd/test/$i
 done
 mkdir -p data/finetune/bvem/train/0 data/finetune/bvem/train/1 data/finetune/bvem/train/2 data/finetune/bvem/val/0 data/finetune/bvem/test/0 data/finetune/bvem/test/1
+mkdir -p data/finetune/smile/train/0 data/finetune/smile/train/1 data/finetune/smile/train/2 data/finetune/smile/val/0 
+for i in {0..9}; do
+    mkdir -p data/finetune/smile/test/$i
+done
 
 cp data/d_drand/foreground/manual_annotations/test_set_m4_0.nii        data/finetune/octa/val/0/img.nii
 cp data/d_drand/foreground/manual_annotations/test_set_m4_0_label.nii  data/finetune/octa/val/0/mask.nii
