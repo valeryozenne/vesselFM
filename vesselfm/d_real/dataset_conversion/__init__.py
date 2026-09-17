@@ -15,3 +15,4 @@ from .convert_VesselExpress import convert_VesselExpress
 from .convert_VesSAP_anno import convert_VesSAP_anno
 from .convert_tUbeNet import convert_tUbeNet
 from .convert_Lightsheet import convert_Lightsheet
+from .convert_SMH import convert_SMH

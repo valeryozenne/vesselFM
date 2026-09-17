@@ -24,6 +24,8 @@ defaults:
   # - default_pretrain@BvEM
   # - default_pretrain@SMILE
   # - default_pretrain@MSD_Task8
+  - default_pretrain@allMRT1
+  - default_pretrain@allCT
   - _self_
 
 domain_randomization:
@@ -35,12 +37,20 @@ domain_randomization:
 #   path: data/d_flow #TODO
 #   filter_dataset_IDs: [2, 10, 12, 13]
 
+allMRT1:
+  sample_prop: 0.03
+  path: data/d_real/allMRT1
+
+allCT:
+  sample_prop: 0.01
+  path: data/d_real/allCT
+
 3Dircadb1:
-  sample_prop: 0.0134
+  sample_prop: 0.0291
   path: data/d_real/3Dircadb1 #TODO
 
 DeepVess:
-  sample_prop: 0.0134
+  sample_prop: 0.0291
   path: data/d_real/DeepVess #TODO
 
 # DeepVesselNet_syncrotone:
@@ -64,43 +74,43 @@ DeepVess:
 #   path: /path/to/d_real/Lightsheet_no_rot #TODO
 
 MiniVess:
-  sample_prop: 0.0134
+  sample_prop: 0.0291
   path: data/d_real/MiniVess #TODO
 
 TopCoW_MRA:
-  sample_prop: 0.0066
+  sample_prop: 0.0143
   path: data/d_real/TopCoW_mra #TODO
 
 TopCoW_CT:
-  sample_prop: 0.0066
+  sample_prop: 0.0143
   path: data/d_real/TopCoW_ct #TODO
 
 TubeNet_MRI:
-  sample_prop: 0.0133
+  sample_prop: 0.0289
   path: data/d_real/TubeNet_MRI #TODO
 
 TubeNet_2Photon:
-  sample_prop: 0.0133
+  sample_prop: 0.0289
   path: data/d_real/TubeNet_2Photon #TODO
 
 TubeTK:
-  sample_prop: 0.0133
+  sample_prop: 0.0289
   path: data/d_real/TubeTK #TODO
 
 CSD:
-  sample_prop: 0.0133
+  sample_prop: 0.0289
   path: data/d_real/CSD #TODO
 
 VesselExpress_Figure2:
-  sample_prop: 0.0044
+  sample_prop: 0.0095
   path: data/d_real/VesselExpress_Figure2 #TODO
 
 VesselExpress_Heart:
-  sample_prop: 0.0044
+  sample_prop: 0.0095
   path: data/d_real/VesselExpress_Heart #TODO
 
 VesselExpress_Bladder:
-  sample_prop: 0.0044
+  sample_prop: 0.0095
   path: data/d_real/VesselExpress_Bladder #TODO
 
 # VesSAP_anno_c0:

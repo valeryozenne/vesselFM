@@ -1,6 +1,6 @@
-DIR="tests/MWA20220519a/vesselfm_all_pt"
+DIR="tests/allCT"
 
-mkdir -p $DIR/00_LIVER $DIR/04_FILTERED $DIR/02_CROPPED $DIR/03_RESAMPLED $DIR/05_VESSELS $DIR/06_VESSELS_MASKED $DIR/01_LIVER_REGRID
+# mkdir -p $DIR/00_LIVER $DIR/04_FILTERED $DIR/02_CROPPED $DIR/03_RESAMPLED $DIR/05_VESSELS $DIR/06_VESSELS_MASKED $DIR/01_LIVER_REGRID
 
 RAWNIFTIS=$(ls $DIR/RAW-NIFTI/*.nii.gz)
 RAWNIFTIBASENAMES=$(ls $DIR/RAW-NIFTI/*.nii.gz | xargs -n 1 basename | sed 's/.nii.gz//')
@@ -17,7 +17,7 @@ for RAWNIFTI in $RAWNIFTIS; do
 
     if [ ! -f ./$DIR/00_LIVER/${BASENAME}.nii.gz ]; then
         echo -e "\033[33m[PIPELINE] Liver segmentation $RAWNIFTI\033[0m"
-        TotalSegmentator -i $RAWNIFTI -o ./$DIR/00_LIVER -ta total_mr -rs liver
+        TotalSegmentator -i $RAWNIFTI -o ./$DIR/00_LIVER -ta total -rs liver
         # rename the output file from liver.nii.gz to the original filename
         mv ./$DIR/00_LIVER/liver.nii.gz ./$DIR/00_LIVER/${BASENAME}.nii.gz
     fi
@@ -32,14 +32,6 @@ for RAWNIFTI in $RAWNIFTIS; do
     echo -e "\033[33m[PIPELINE] Resampling $RAWNIFTI\033[0m"
     mrgrid ./$DIR/02_CROPPED/${BASENAME}.nii.gz regrid ./$DIR/03_RESAMPLED/${BASENAME}.nii.gz --voxel 1,1,1 --force
 
-    # APPLY N4 BIAS FIELD CORRECTION with ANTS
-
-    echo -e "\033[33m[PIPELINE] Applying N4 bias field correction to $RAWNIFTI\033[0m"
-    N4BiasFieldCorrection \
-        -i ./$DIR/03_RESAMPLED/${BASENAME}.nii.gz \
-        -s 10 \
-        -o ./$DIR/04_FILTERED/${BASENAME}.nii.gz
-
 done
 
 # INFERENCE WITH VESSELFM
@@ -50,9 +42,10 @@ python vesselfm/seg/inference.py
 
 for RAWNIFTI in $RAWNIFTIS; do
     BASENAME=$(basename $RAWNIFTI .nii.gz)
-    FILENAME=$(ls ./$DIR/05_VESSELS/${BASENAME}*.nii.gz)
+    FILENAME=$(ls ./$DIR/03_RESAMPLED/${BASENAME}.nii.gz)
+    PRED=$(ls ./$DIR/05_VESSELS/${BASENAME}_pred.nii.gz)
 
     mrgrid ./$DIR/00_LIVER/${BASENAME}.nii.gz regrid --template $FILENAME ./$DIR/01_LIVER_REGRID/${BASENAME}.nii.gz --interp nearest --force
 
-    mrcalc $FILENAME ./$DIR/01_LIVER_REGRID/${BASENAME}.nii.gz --mult ./$DIR/06_VESSELS_MASKED/${BASENAME}.nii.gz --datatype uint8 --force
+    mrcalc $PRED ./$DIR/01_LIVER_REGRID/${BASENAME}.nii.gz --mult ./$DIR/06_VESSELS_MASKED/${BASENAME}.nii.gz --datatype uint8 --force
 done

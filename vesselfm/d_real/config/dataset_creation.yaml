@@ -22,40 +22,50 @@ defaults:
   - dataset_generation/default@dataset.SMILE
   - dataset_generation/default@dataset.BvEM
   - dataset_generation/default@dataset.MSD_Task8
+  - dataset_generation/default@dataset.allMRT1
+  - dataset_generation/default@dataset.allCT
   - _self_
 
 input_size: [128, 128, 128]
 path: data/d_real #TODO
 generate_datasets:
   [
-    3Dircadb1,
-    DeepVess,
-    DeepVesselNet_syncrotone,
-    DeepVesselNet_tof_mra,
-    HiP-CT,
-    HRKidney,
-    Lightsheet_no_rot,
-    MiniVess,
-    TubeNet_2Photon,
-    TubeNet_MRI,
-    TubeTK,
-    VesselExpress_Figure2,
-    VesselExpress_Heart,
-    VesselExpress_Bladder,
-    VesSAP_anno_c0_no_rot,
-    VesSAP_anno_c1_no_rot,
-    CSD,
-    TopCoW_ct,
-    TopCoW_mra,
+    # 3Dircadb1,
+    # DeepVess,
+    # DeepVesselNet_syncrotone,
+    # DeepVesselNet_tof_mra,
+    # HiP-CT,
+    # HRKidney,
+    # Lightsheet_no_rot,
+    # MiniVess,
+    # TubeNet_2Photon,
+    # TubeNet_MRI,
+    # TubeTK,
+    # VesselExpress_Figure2,
+    # VesselExpress_Heart,
+    # VesselExpress_Bladder,
+    # VesSAP_anno_c0_no_rot,
+    # VesSAP_anno_c1_no_rot,
+    # CSD,
+    # TopCoW_ct,
+    # TopCoW_mra,
+    # allMRT1,
+    allCT,
     # OCTA_no_rot,
     # SMILE,
     # BvEM,
     # MSD_Task8
   ]
-cpus: 64
+cpus: 32
 generate_nifti: false # pour les images de validation, mettre à true
 
 dataset:
+  allMRT1: ## dataset Smart-Heat, only MRI images T1 contrast
+    num_samples: 10000
+    path: data/converted_real/allMRT1
+  allCT: ## dataset Smart-Heat, only CT images
+    num_samples: 1000
+    path: data/converted_real/allCT
   3Dircadb1:
     num_samples: 10000
     path: data/converted_real/3Dircadb1 # TODO
@@ -133,7 +143,7 @@ dataset:
         rotation_range: [0.175, 0.0, 0.0]
   SMILE:
     num_samples: 500
-    path: /path/to/preprocessed/SMILE # TODO
+    path: data/converted_real/SMILE # TODO
   MSD_Task8:
     num_samples: 5000
     path: data/converted_real/msd_task8 # TODO
