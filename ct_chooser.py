@@ -5,7 +5,7 @@ import subprocess
 from pathlib import Path
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QHBoxLayout, QPushButton, QTreeWidget, QTreeWidgetItem,
-                             QFileDialog, QMessageBox, QLabel)
+                             QFileDialog, QMessageBox, QLabel, QLineEdit)
 from PyQt6.QtCore import Qt
 
 class NiftiSelectorApp(QMainWindow):
@@ -17,6 +17,8 @@ class NiftiSelectorApp(QMainWindow):
         self.root_dir = ""
         self.out_dir = ""
         self.file_items = []  # Stocke les objets représentant les fichiers
+        self.tree_data = {}
+        self.search_query = ""
 
         self.setup_ui()
 
@@ -41,6 +43,11 @@ class NiftiSelectorApp(QMainWindow):
         self.btn_symlink.clicked.connect(self.create_symlinks)
         self.btn_symlink.setStyleSheet("background-color: #c8e6c9;")
         toolbar.addWidget(self.btn_symlink)
+
+        self.search_edit = QLineEdit()
+        self.search_edit.setPlaceholderText("Rechercher dans le nom du fichier...")
+        self.search_edit.textChanged.connect(self.apply_search_filter)
+        toolbar.addWidget(self.search_edit)
         
         layout.addLayout(toolbar)
 
@@ -57,51 +64,59 @@ class NiftiSelectorApp(QMainWindow):
 
     def load_tree(self):
         dir_path = QFileDialog.getExistingDirectory(self, "Sélectionner le dossier racine")
-        if not dir_path: 
+        if not dir_path:
             return
-            
+
         self.root_dir = dir_path
+        self.tree_data = self.build_tree_data()
+        self.apply_search_filter(self.search_edit.text())
+
+    def build_tree_data(self):
+        pattern = os.path.join(self.root_dir, "*", "*CT*", "RAW-NIFTI", "*.nii.gz")
+        files = sorted(glob.glob(pattern))
+        tree_dict = {}
+
+        for file_path in files:
+            rel = os.path.relpath(file_path, self.root_dir)
+            parts = rel.split(os.sep)
+            curr = tree_dict
+            for part in parts[:-1]:
+                curr = curr.setdefault(part, {})
+            curr[parts[-1]] = {"__file__": file_path}
+
+        return tree_dict
+
+    def apply_search_filter(self, text):
+        self.search_query = (text or "").strip().lower()
         self.tree.clear()
         self.file_items.clear()
 
-        # Recherche des fichiers (selon votre arborescence)
-        pattern = os.path.join(self.root_dir, "*", "*CT*", "RAW-NIFTI", "*.nii.gz")
-        files = glob.glob(pattern)
+        filtered_tree = self.filter_tree(self.tree_data, self.search_query)
+        self.insert_nodes(self.tree.invisibleRootItem(), filtered_tree, self.root_dir)
+        self.tree.expandAll()
 
-        if not files:
-            QMessageBox.information(self, "Résultat", "Aucun fichier correspondant n'a été trouvé.")
-            return
-
-        # Construction du dictionnaire pour l'arborescence
-        tree_dict = {}
-        for f in files:
-            rel = os.path.relpath(f, self.root_dir)
-            parts = rel.split(os.sep)
-            curr = tree_dict
-            for part in parts:
-                if part not in curr: 
-                    curr[part] = {}
-                curr = curr[part]
-
-        # Remplissage de l'interface
-        self.insert_nodes(self.tree.invisibleRootItem(), tree_dict, self.root_dir)
-        self.tree.expandAll() # Déploie l'arbre par défaut
+    def filter_tree(self, nodes_dict, query):
+        filtered = {}
+        for key, value in sorted(nodes_dict.items(), key=lambda item: item[0].lower()):
+            if isinstance(value, dict) and "__file__" in value:
+                file_name = os.path.basename(value["__file__"]).lower()
+                if not query or query in file_name:
+                    filtered[key] = value
+            else:
+                filtered[key] = self.filter_tree(value, query)
+        return filtered
 
     def insert_nodes(self, parent_item, nodes_dict, current_path):
-        for key, sub_dict in sorted(nodes_dict.items()):
+        for key, sub_dict in sorted(nodes_dict.items(), key=lambda item: item[0].lower()):
             full_path = os.path.join(current_path, key)
-            is_leaf = len(sub_dict) == 0
+            is_file = isinstance(sub_dict, dict) and "__file__" in sub_dict
 
             item = QTreeWidgetItem(parent_item, [key])
-            
-            if is_leaf:
-                # Stocker le chemin du fichier de façon invisible (PyQt6 utilise Qt.ItemDataRole)
-                item.setData(0, Qt.ItemDataRole.UserRole, full_path) 
-                
-                # Ajouter la case à cocher (PyQt6 utilise Qt.ItemFlag et Qt.CheckState)
+
+            if is_file:
+                item.setData(0, Qt.ItemDataRole.UserRole, sub_dict["__file__"])
                 item.setFlags(item.flags() | Qt.ItemFlag.ItemIsUserCheckable)
                 item.setCheckState(0, Qt.CheckState.Unchecked)
-                
                 self.file_items.append(item)
             else:
                 self.insert_nodes(item, sub_dict, full_path)
