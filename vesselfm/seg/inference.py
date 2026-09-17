@@ -194,21 +194,21 @@ def main(cfg):
             # save final pred
             write_nifti(
                 pred_thresh.astype(np.uint8), 
-                output_folder / f"{image_path.name.split('.')[0]}_{cfg.file_app}pred.nii.gz",
+                output_folder / f"{image_path.name.replace('.nii.gz', '')}_{cfg.file_app}pred.nii.gz",
                 spacing
             )
 
             write_nifti(
-                image.astype(np.float32).squeeze(), 
-                output_folder / f"{image_path.name.split('.')[0]}_{cfg.file_app}img.nii.gz",
+                image.cpu().detach().numpy().astype(np.float32).squeeze(), 
+                output_folder / f"{image_path.name.replace('.nii.gz', '')}_{cfg.file_app}img.nii.gz",
                 spacing
             )
 
             if mask_paths is not None:
                 metrics = Evaluator().estimate_metrics(pred, mask, threshold=cfg.merging.threshold) # no post-processing
-                logger.info(f"Dice of {image_path.name.split('.')[0]}: {metrics['dice'].item()}")
-                logger.info(f"clDice of {image_path.name.split('.')[0]}: {metrics['cldice'].item()}")
-                metrics_dict[image_path.name.split('.')[0]] = metrics
+                logger.info(f"Dice of {image_path.name.replace('.nii.gz', '')}: {metrics['dice'].item()}")
+                logger.info(f"clDice of {image_path.name.replace('.nii.gz', '')}: {metrics['cldice'].item()}")
+                metrics_dict[image_path.name.replace('.nii.gz', '')] = metrics
 
     if mask_paths is not None:
         mean_metrics = calculate_mean_metrics(list(metrics_dict.values()), round_to=cfg.round_to)
