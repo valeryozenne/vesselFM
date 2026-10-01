@@ -11,7 +11,7 @@ TRANSFORMS: # online
 
 DATA_GEN:
   DIFF: # diffusion-based data gen
-    TAG: 'fm-more'
+    TAG: 'fm'
     GPU_ID: 0
     WARMUP_STEPS: 500
     EPOCHS: 200
