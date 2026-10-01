@@ -6,7 +6,7 @@ https://github.com/lucidrains/denoising-diffusion-pytorch/blob/main/denoising_di
 
 import copy
 import time
-import warnings
+import warnings, sys
 from pathlib import Path
 
 import nibabel as nib
@@ -232,11 +232,25 @@ class Trainer(object):
         self.ema_model.load_state_dict(data['ema'])
 
     def train(self):
+        import os
+        local_rank = int(os.environ.get("LOCAL_RANK", 0))
+        
         start_time = time.time()
         accumulated_loss = []
         try:
             for epoch in range(self.epochs):
-                for itera, batch in enumerate(self.dl):
+                
+                # 1. Très important pour DDP : forcer un mélange différent à chaque époque
+                if hasattr(self.dl, 'sampler') and hasattr(self.dl.sampler, 'set_epoch'):
+                    self.dl.sampler.set_epoch(epoch)
+
+                # 2. Barre de progression (uniquement sur le processus 0)
+                if local_rank == 0:
+                    iterable_loader = tqdm(self.dl, desc=f"Époque {epoch}/{self.epochs}", file=sys.stdout)
+                else:
+                    iterable_loader = self.dl
+
+                for itera, batch in enumerate(iterable_loader):
                     image, mask, class_id = batch
                     image, mask, class_id = image.to(device=self.device), mask.to(device=self.device), class_id.to(device=self.device)
 
@@ -250,12 +264,13 @@ class Trainer(object):
                     loss = self.model(image, condition_tensors=mask, y=class_id)
                     loss.backward()
 
-                    print(f'e{epoch}, i{itera}: {loss.item()}')
                     accumulated_loss.append(loss.item())
-
                     average_loss = np.mean(accumulated_loss)
-                    end_time = time.time()
-                    self.writer.add_scalar("training_loss", average_loss, self.step)
+                    
+                    # Mise à jour de la barre de progression au lieu d'inonder la console avec des prints
+                    if local_rank == 0:
+                        iterable_loader.set_postfix(loss=f"{loss.item():.4f}", avg_loss=f"{average_loss:.4f}")
+                        self.writer.add_scalar("training_loss", average_loss, self.step)
 
                     self.opt.step()
                     self.opt.zero_grad()
@@ -263,35 +278,42 @@ class Trainer(object):
                     if self.step % self.update_ema_every == 0:
                         self.step_ema()
 
-                    if self.step != 0 and self.step % self.save_and_sample_every == 0:
-                        milestone = self.step // self.save_and_sample_every
+                    # 3. Sauvegardes UNIQUEMENT sur le processus 0 pour éviter la corruption de fichiers
+                    if local_rank == 0:
+                        if self.step != 0 and self.step % self.save_and_sample_every == 0:
+                            milestone = self.step // self.save_and_sample_every
 
-                        # sample an image
-                        images = self.ema_model.sample(condition_tensors=mask, y=class_id)
+                            # sample an image
+                            # (La fonction sample contient aussi un tqdm, qui s'affichera proprement puisque limité au rank 0)
+                            images = self.ema_model.sample(condition_tensors=mask, y=class_id)
 
-                        for idx, (i, m, ci) in enumerate(zip(images, mask, class_id)):  # TODO: breaks if no class_cond / class_id == None
-                            nifti_img = nib.Nifti1Image(i.cpu().numpy().squeeze(), affine=np.eye(4))
-                            nib.save(nifti_img, str(self.results_folder / f'sample-{milestone}-i-{idx}-class-{ci}.nii.gz'))
-                            nifti_mask = nib.Nifti1Image(m.cpu().numpy().squeeze(), affine=np.eye(4))
-                            nib.save(nifti_mask, str(self.results_folder / f'sample-{milestone}-m-{idx}-class-{ci}.nii.gz'))
+                            for idx, (i, m, ci) in enumerate(zip(images, mask, class_id)):
+                                nifti_img = nib.Nifti1Image(i.cpu().numpy().squeeze(), affine=np.eye(4))
+                                nib.save(nifti_img, str(self.results_folder / f'sample-{milestone}-i-{idx}-class-{ci}.nii.gz'))
+                                nifti_mask = nib.Nifti1Image(m.cpu().numpy().squeeze(), affine=np.eye(4))
+                                nib.save(nifti_mask, str(self.results_folder / f'sample-{milestone}-m-{idx}-class-{ci}.nii.gz'))
 
-                        if milestone % 5 == 0:  # save only ckpts for every 5th milestone
-                            self.save(milestone)
+                            if milestone % 5 == 0:  # save only ckpts for every 5th milestone
+                                self.save(milestone)
 
                     self.step += 1
+                    
         except KeyboardInterrupt:
-            print('training interrupted')
+            if local_rank == 0:
+                print('\nTraining interrupted')
         else:
-            print('training completed')
+            if local_rank == 0:
+                print('\nTraining completed')
 
-        end_time = time.time()
-        execution_time = (end_time - start_time)/3600
-        self.writer.add_hparams(
-            {
-                "lr": self.train_lr,
-                "batchsize": self.train_batch_size,
-                "execution_time (hour)":execution_time
-            },
-            {"last_loss":average_loss}
-        )
-        self.writer.close()
+        if local_rank == 0:
+            end_time = time.time()
+            execution_time = (end_time - start_time) / 3600
+            self.writer.add_hparams(
+                {
+                    "lr": self.train_lr,
+                    "batchsize": self.train_batch_size,
+                    "execution_time (hour)": execution_time
+                },
+                {"last_loss": average_loss}
+            )
+            self.writer.close()

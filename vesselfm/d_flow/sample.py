@@ -2,12 +2,14 @@
 
 import re
 import os
+import math
 import random
 import argparse
 import warnings
 from pathlib import Path
 
 import torch
+import torch.distributed as dist
 import numpy as np
 import nibabel as nib
 import SimpleITK as sitk
@@ -25,7 +27,7 @@ def read_nifti(path):
 
 
 @torch.inference_mode()
-def sample(args, device):
+def sample(args, device, rank, world_size): # [MODIFICATION] Ajout rank et world_size
     model = create_model(
         image_size=128, num_channels=64, num_res_blocks=1, in_channels=2, out_channels=1, 
         class_cond=args.class_cond, num_classes=args.num_classes, use_cfg=args.use_cfg
@@ -37,15 +39,23 @@ def sample(args, device):
         interpolate=args.interpolate, num_classes=args.num_classes
     ).to(device=device)
     
-    ckpt = torch.load(args.ckpt_path)
+    ckpt = torch.load(args.ckpt_path, map_location="cpu") # [MODIFICATION] Load sur CPU d'abord pour éviter la surcharge VRAM
     diffusion.load_state_dict(ckpt[args.state_dict])
+    model.to(device) # Transfert final sur le bon GPU
 
-    masks = list(Path(args.mask_folder).iterdir())
+    # [MODIFICATION] Tri obligatoire avant shuffle pour que tous les GPUs aient la même base
+    masks = sorted(list(Path(args.mask_folder).iterdir()))
     random.shuffle(masks)   # each seed should use different masks
+
+    # [MODIFICATION] Division des masques : chaque GPU prend une fraction différente
+    masks = masks[rank::world_size]
+    
+    # [MODIFICATION] Ajustement du nombre d'échantillons par GPU
+    local_num_samples = math.ceil(args.num_samples / world_size)
 
     gen_samples = 0
     for mask in masks:
-        m = torch.tensor(np.load(list(mask.iterdir())[-1]))[None][None].to(device=device).float()
+        m = torch.tensor(np.load(mask / "mask.npy"))[None][None].to(device=device).float()
 
         for class_id in range(args.num_classes):
             if args.production: # randomly select a class
@@ -57,9 +67,14 @@ def sample(args, device):
                 y=class_tensor.repeat(args.batchsize)
             )
 
-            print(f'Finished sample {gen_samples + args.start_id} of class {class_id}.')
-            path_to_sample = Path(args.out_folder) / str(gen_samples + args.start_id)
-            path_to_sample.mkdir(exist_ok=True)
+            # [MODIFICATION] Calcul d'un ID unique global pour éviter que les GPUs n'écrivent dans le même dossier
+            global_sample_id = args.start_id + (gen_samples * world_size) + rank
+
+            if rank == 0: # Optionnel: n'afficher les logs que sur le GPU principal
+                print(f'[Rank {rank}] Finished sample {global_sample_id} of class {class_id}.')
+            
+            path_to_sample = Path(args.out_folder) / str(global_sample_id)
+            path_to_sample.mkdir(exist_ok=True, parents=True)
 
             if not args.no_npy:
                 np.save(path_to_sample / f'mask_{class_id}.npy', m.cpu().squeeze().numpy().astype(np.bool_))
@@ -83,7 +98,7 @@ def sample(args, device):
             )
 
         gen_samples += 1
-        if gen_samples == args.num_samples:
+        if gen_samples >= local_num_samples:
             break
 
 def generate_overview(nifti_paths, font_path=None):
@@ -145,11 +160,21 @@ if __name__ == '__main__':
     parser.add_argument('--gpu_id', type=str, default='0')
     args = parser.parse_args()
 
-    os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_id
-    device = 'cuda:0'
+    if "LOCAL_RANK" in os.environ:
+        dist.init_process_group(backend="nccl")
+        local_rank = int(os.environ["LOCAL_RANK"])
+        world_size = dist.get_world_size()
+        rank = dist.get_rank()
+        torch.cuda.set_device(local_rank)
+        device = torch.device(f"cuda:{local_rank}")
+    else:
+        os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu_id
+        device = torch.device('cuda:0')
+        rank = 0
+        world_size = 1
 
     if args.seed == -1:
-        seed = random.randint(0, int(1e5))
+        seed = 42 
     else:
         seed = args.seed
 
@@ -160,4 +185,7 @@ if __name__ == '__main__':
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
-    sample(args, device)
+    sample(args, device, rank, world_size)
+
+    if dist.is_initialized():
+        dist.destroy_process_group()
