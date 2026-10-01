@@ -5,9 +5,10 @@
 *.log
 *.png
 __pycache__
+.*
 
 experiments
-data
+data/d_*
 runs
 ckpts
 outputs
@@ -16,3 +17,4 @@ tests
 sauron
 logs
 dice.sh
+venv
