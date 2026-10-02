@@ -45,7 +45,7 @@ def sample(args, device):
 
     gen_samples = 0
     for mask in masks:
-        m = torch.tensor(np.load(list(mask.iterdir())[-1]))[None][None].to(device=device).float()
+        m = torch.tensor(np.load(mask / "mask.npy"))[None][None].to(device=device).float()
 
         for class_id in range(args.num_classes):
             if args.production: # randomly select a class
