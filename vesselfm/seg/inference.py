@@ -53,11 +53,15 @@ def load_model(cfg, device):
     
     return model
 
-def write_nifti(data, file_path, spacing=None):
+def write_nifti(data, file_path, spacing=None, origin=None, direction=None):
     meta_data = {}
     meta_data['itk_spacing'] = spacing if spacing else [1, 1, 1]
     data_itk = sitk.GetImageFromArray(data)
     data_itk.SetSpacing(meta_data['itk_spacing'])
+    if origin is not None:
+        data_itk.SetOrigin(origin)
+    if direction is not None:
+        data_itk.SetDirection(direction)
     sitk.WriteImage(data_itk, str(file_path))
 
 def read_nifti(path):
@@ -90,7 +94,7 @@ def read_nifti(path):
         target_spacing = list(orig_spacing)
 
     img = sitk.GetArrayFromImage(sitk_img)
-    return img, target_spacing
+    return img, target_spacing, sitk_img.GetOrigin(), sitk_img.GetDirection()
 
 def get_paths(cfg):
     image_paths = list(Path(cfg.image_path).iterdir())
@@ -159,7 +163,7 @@ def main(cfg):
             preds = [] # average over test time augmentations
             for scale in cfg.tta.scales:
                 # apply pre-processing transforms
-                image, spacing = read_nifti(image_path)
+                image, spacing, origin, direction = read_nifti(image_path)
                 image = transforms(image.astype(np.float32))[None].to(device)
                 mask = torch.tensor(read_nifti(mask_paths[idx])[0]).bool() if mask_paths else None
   
@@ -194,15 +198,19 @@ def main(cfg):
             # save final pred
             write_nifti(
                 pred_thresh.astype(np.uint8), 
-                output_folder / f"{image_path.name.replace('.nii.gz', '')}_{cfg.file_app}pred.nii.gz",
-                spacing
+                output_folder / f"{image_path.name.replace('.nii.gz', '')}{cfg.file_app}.nii.gz",
+                spacing,
+                origin,
+                direction
             )
 
-            write_nifti(
-                image.cpu().detach().numpy().astype(np.float32).squeeze(), 
-                output_folder / f"{image_path.name.replace('.nii.gz', '')}_{cfg.file_app}img.nii.gz",
-                spacing
-            )
+            # write_nifti(
+            #     image.cpu().detach().numpy().astype(np.float32).squeeze(), 
+            #     output_folder / f"{image_path.name.replace('.nii.gz', '')}_{cfg.file_app}img.nii.gz",
+            #     spacing,
+            #     origin,
+            #     direction
+            # )
 
             if mask_paths is not None:
                 metrics = Evaluator().estimate_metrics(pred, mask, threshold=cfg.merging.threshold) # no post-processing
