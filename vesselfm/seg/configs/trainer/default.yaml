@@ -1,7 +1,7 @@
 lightning_trainer:
   _target_: lightning.pytorch.trainer.trainer.Trainer
   _partial_: True
-  val_check_interval: 5000
+  val_check_interval: 4000
   max_time: "03:00:00:00"
   max_steps: -1
   max_epochs: 10
@@ -39,13 +39,13 @@ lightning_module:
         _partial_: True
         start_factor: 0.01
         end_factor: 1.0
-        total_iters: 150
+        total_iters: 2000
     cosine_annealing:
       interval: step
       frequency: 10
       scheduler:
         _target_: torch.optim.lr_scheduler.CosineAnnealingLR
         _partial_: True
-        T_max: 75125
+        T_max: 76500
         eta_min: 0.0
         last_epoch: -1

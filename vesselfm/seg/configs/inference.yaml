@@ -3,10 +3,12 @@ defaults:
   - model: dyn_unet_base
   - _self_
 
+## T2 post config
+
 # i/o
-image_path: tests/MWA20220519a/vesselfm_all_pt/04_FILTERED
+image_path: tests/MWA20220317a/04_FILTERED
 image_file_ending: nii.gz
-output_folder: tests/MWA20220519a/vesselfm_all_pt/05_VESSELS
+output_folder: tests/MWA20220317a/05_VESSELS
 file_app: ""
 
 mask_path: null
@@ -43,10 +45,10 @@ transforms_config:
 # test time augmentation
 tta:
   scales: [0.2, 0.5, 1]
-  invert: true
+  invert: false
   invert_mean_thresh: 0.1
-  equalize_hist: false
-  hist_bins: 100
+  equalize_hist: true
+  hist_bins: 2
 
 # post-processing
 post:

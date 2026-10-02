@@ -3,12 +3,10 @@ defaults:
   - model: dyn_unet_base
   - _self_
 
-## T1 vibe config
-
 # i/o
-image_path: tests/MWA20220317a/04_FILTERED
+image_path: tests/allCT/03_RESAMPLED
 image_file_ending: nii.gz
-output_folder: tests/MWA20220317a/05_VESSELS
+output_folder: tests/allCT/05_VESSELS
 file_app: ""
 
 mask_path: null
@@ -19,7 +17,7 @@ device: cuda:0
 ckpt_path: /path/to/ckpt.pt
 
 # sliding window inferer
-batch_size: 16
+batch_size: 8
 patch_size: [128, 128, 128]
 overlap: 0.5
 mode: "constant"
@@ -34,8 +32,8 @@ transforms_config:
   - EnsureChannelFirst:
       channel_dim: "no_channel"
   - ScaleIntensityRangePercentiles:
-      lower: 1
-      upper: 99
+      lower: 20
+      upper: 98
       b_min: 0
       b_max: 1
       clip: true
@@ -45,9 +43,9 @@ transforms_config:
 # test time augmentation
 tta:
   scales: [0.2, 0.5, 1]
-  invert: true
+  invert: false
   invert_mean_thresh: 0.1
-  equalize_hist: false
+  equalize_hist: true
   hist_bins: 100
 
 # post-processing
