@@ -9,6 +9,9 @@ __pycache__
 
 experiments
 data/d_*
+data/converted_real
+data/finetune
+data/evaluation
 runs
 ckpts
 outputs
