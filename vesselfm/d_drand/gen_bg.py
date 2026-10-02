@@ -14,7 +14,7 @@ class BackgroundGen3D():
         self, mode_bg_geom, mode_bg_noise, num_imgs, shape=[128, 128, 128], rand_int_scale=True,
         num_voronoi_min=5, num_voronoi_max=30, num_spheres_min=10, num_spheres_max=30, rad_min=20, 
         rad_max=50, max_attempts=1000, perlin_scales=[2, 4, 8, 16, 32, 64], perlin_min_std=0, 
-        perlin_max_std=5, gaussian_min_std=0, gaussian_max_std=5, out_dir=None
+        perlin_max_std=5, gaussian_min_std=0, gaussian_max_std=5, out_dir=None, first_idx=0
     ):
         self.img_type = f'bg_geom_{mode_bg_geom}_bg_noise_{mode_bg_noise}'
         self.save_imgs = True if out_dir is not None else False
@@ -22,6 +22,7 @@ class BackgroundGen3D():
 
         self.mode_bg_geom = mode_bg_geom
         self.mode_bg_noise = mode_bg_noise
+        self.first_idx = first_idx
         self.num_imgs = num_imgs
 
         self.shape = shape
@@ -47,7 +48,7 @@ class BackgroundGen3D():
     def __call__(self):
         output_imgs = []
 
-        for idx in tqdm(range(self.num_imgs), desc=f'Generating {self.img_type}'):
+        for idx in tqdm(range(self.first_idx, self.num_imgs), desc=f'Generating {self.img_type}'):
             tqdm.write(f'Generating img {idx}.')
 
             # init output img
@@ -190,6 +191,7 @@ if __name__ == '__main__':
     parser.add_argument('--mode_bg_geom', type=str, default=None, choices=[None, 'voronoi', 'spheres'])
     parser.add_argument('--mode_bg_noise', type=str, default='perlin', choices=[None, 'worley', 'perlin', 'gaussian', 'plain'])
     parser.add_argument('--num_imgs', type=int, default=20000)
+    parser.add_argument('--first_idx', type=int, default=0)
     parser.add_argument('--out_dir', type=str, default='data/d_drand/background')
     args = parser.parse_args()
 
@@ -201,7 +203,7 @@ if __name__ == '__main__':
         mode_bg_noise=args.mode_bg_noise,
         num_imgs=args.num_imgs,
         out_dir=args.out_dir,
-
+        first_idx=args.first_idx,
         num_voronoi_min=10, num_voronoi_max=30,
         num_spheres_min=10, num_spheres_max=30, rad_min=20, rad_max=50, max_attempts=1000,
         perlin_scales=[2, 4, 8, 16, 32, 64], perlin_min_std=0, perlin_max_std=5,

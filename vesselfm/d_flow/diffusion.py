@@ -1,17 +1,22 @@
 """Adapted from https://github.com/mobaidoctor/med-ddpm/blob/main/train.py"""
 
 import json
-import sys
+import sys, os
 import socket
 import subprocess
 from pathlib import Path
 
 import yaml
 import torch
+import torch.distributed as dist
 
 from vesselfm.d_flow.data import build_loader
 from vesselfm.d_flow.diffusion_unet import create_model
 from vesselfm.d_flow.trainer import FlowMatching, Trainer
+
+# refactor print for tqdm
+def print(*args, **kwargs):
+    tqdm.write(*args, **kwargs)
 
 
 def get_meta_data():
@@ -50,10 +55,24 @@ def train(config):
     results_folder.mkdir(exist_ok=True, parents=True)
     config_log = load_config(dict=True)
     config_log.update(get_meta_data())
-    write_json(config_log, results_folder / 'config.json')
+    
+    # Only let the main process write the config file to avoid race conditions
+    local_rank = int(os.environ.get("LOCAL_RANK", 0))
+    if local_rank == 0:
+        write_json(config_log, results_folder / 'config.json')
 
-    # load model
-    device = torch.device(f"cuda:{config.DATA_GEN.DIFF.GPU_ID}" if torch.cuda.is_available() else "cpu")
+    # --- DISTRIBUTED DEVICE SETUP ---
+    # 1. Initialize process group for DDP
+    if torch.distributed.is_available() and not torch.distributed.is_initialized():
+        dist.init_process_group(backend="nccl")
+        
+    # 2. Pin the current process to its specific GPU
+    torch.cuda.set_device(local_rank)
+    
+    # 3. Create the device object based on local_rank, NOT the config YAML
+    device = torch.device(f"cuda:{local_rank}")
+    # --------------------------------
+
     classes = config_log['DATA_GEN']['DIFF']['CLASSES']
     model = create_model(
         image_size=config.DATA.IMG_SIZE, num_channels=config.DATA_GEN.DIFF.NUM_CHANNELS,
@@ -65,6 +84,7 @@ def train(config):
     model.train()
 
     # generate dataloader
+    # Note: Ensure build_loader uses a DistributedSampler internally if using DDP!
     dataloader = build_loader(config, classes)
 
     diffusion = FlowMatching(
@@ -82,7 +102,6 @@ def train(config):
         use_cfg=config.DATA_GEN.DIFF.CFG, cfg_p_drop=config.DATA_GEN.DIFF.P_CLS_DROP
     )
     trainer.train()
-
 
 if __name__ == '__main__':
     config = load_config(dict=False)

@@ -5,6 +5,10 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from monai.transforms import RandFlipd, RandRotate90d, EnsureTyped, Compose
 
+import torch.distributed as dist
+from torch.utils.data.distributed import DistributedSampler
+from torch.utils.data import Dataset, DataLoader
+
 
 class MultiClassDiffDataset(Dataset):
     def __init__(self, config, classes):
@@ -78,9 +82,24 @@ def get_transforms(config):
 
 def build_loader(config, classes):
     dataset = MultiClassDiffDataset(config, classes)
+    
+    # 1. Check if distributed training is active
+    if dist.is_available() and dist.is_initialized():
+        # 2. Create the sampler to partition data across GPUs
+        sampler = DistributedSampler(dataset, shuffle=True)
+        shuffle = False  # The sampler handles shuffling now
+    else:
+        sampler = None
+        shuffle = True   # Fallback for single-GPU runs
+        
+    # 3. Pass the sampler to the DataLoader
     dataloader = DataLoader(
-        dataset, batch_size=config.DATA.BATCH_SIZE, 
-        shuffle=True, num_workers=config.DATA.NUM_WORKERS, 
-        drop_last=True, pin_memory=True
+        dataset, 
+        batch_size=config.DATA.BATCH_SIZE, 
+        shuffle=shuffle,
+        sampler=sampler,
+        num_workers=config.DATA.NUM_WORKERS, 
+        drop_last=True, 
+        pin_memory=True
     )
     return dataloader
