@@ -13,42 +13,54 @@ logger = logging.getLogger(__name__)
 
 
 class UnionDataset(Dataset):
-    """
-    Dataset that accumulates all given datasets.
-    """
     def __init__(self, dataset_configs, mode, finetune=False):
         super().__init__()
-        # init datasets
         self.finetune = finetune
         self.datasets, probs = [], []
         self.len = 0
         for name, dataset_config in dataset_configs.items():
             data_dir = Path(dataset_config.path) / mode if finetune else Path(dataset_config.path)
-            paths = sorted(list(data_dir.iterdir())) # ensures that we use same 1-shot sample
+    
+            # --- 1. PRÉ-RÉSOLUTION ET FILTRAGE DES CHEMINS ---
+            valid_samples = []
+            for sample_dir in sorted(list(data_dir.iterdir())):
+                # Trouver les fichiers une seule fois au démarrage
+                img_paths = list(sample_dir.glob('*img*'))
+                mask_paths = list(sample_dir.glob('*mask*'))
+                
+                if not img_paths or not mask_paths:
+                    continue
+                    
+                img_path = img_paths[0]
+                mask_path = mask_paths[0]
 
-            self.len += len(paths)
+                # Filtrer directement ici pour éviter la boucle infinie dans __getitem__
+                if dataset_config.filter_dataset_IDs is not None:
+                    if int(img_path.stem.split("_")[-1]) in dataset_config.filter_dataset_IDs:
+                        continue 
+                        
+                valid_samples.append({
+                    "img_path": img_path,
+                    "mask_path": mask_path
+                })
+
+            self.len += len(valid_samples)
             self.datasets.append(
                 {
                     "name": name,
-                    "paths": paths,
-                    "reader": determine_reader_writer(dataset_config.file_format)(),
+                    "samples": valid_samples,
+                    # --- 2. STOCKER LA CLASSE DU READER (SANS L'INSTANCIER AVEC ()) ---
+                    "reader_cls": determine_reader_writer(dataset_config.file_format),
                     "transforms": generate_transforms(dataset_config.transforms[mode]),
-                    "sample_prop": dataset_config.sample_prop,
-                    "filter_dataset_IDs": dataset_config.filter_dataset_IDs
                 }
             )
             probs.append(dataset_config.sample_prop)
 
-        # ensure that probs sum up to 1
-        probs = torch.tensor(probs, dtype=torch.float32) # 1. Forcer le type float
-        
-        # 2. Vérifier qu'il n'y a pas de valeurs négatives
+        probs = torch.tensor(probs, dtype=torch.float32)
         if (probs < 0).any():
             raise ValueError("Erreur : La configuration contient un sample_prop négatif.")
             
         probs_sum = probs.sum()
-        
-        # 3. Sécuriser la division par zéro
         if probs_sum == 0:
             logger.warning("La somme des sample_prop est de 0. Utilisation d'une distribution uniforme.")
             self.probs = torch.ones_like(probs) / len(probs)
@@ -59,52 +71,35 @@ class UnionDataset(Dataset):
         return self.len
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        # sample dataset
+        # Sélection du dataset
         dataset_id = torch.multinomial(self.probs, 1).item()
         dataset = self.datasets[dataset_id]
 
-        # sample data sample
-        while True:
-            data_idx = idx if self.finetune else torch.randint(0, len(dataset["paths"]), (1,)).item()
-            sample_id =  dataset["paths"][data_idx]
+        # Sélection de l'échantillon (plus de boucle while True infinie)
+        data_idx = idx if self.finetune else torch.randint(0, len(dataset["samples"]), (1,)).item()
+        sample = dataset["samples"][data_idx]
+        
+        img_path = sample["img_path"]
+        mask_path = sample["mask_path"]
 
-            img_path = [path for path in sample_id.iterdir() if 'img' in path.name][0]
-            mask_path = [path for path in sample_id.iterdir() if 'mask' in path.name][0]
+        # --- 3. INSTANCIATION DU READER DANS LE WORKER ---
+        reader = dataset["reader_cls"]()
 
-            if dataset['filter_dataset_IDs'] is not None:
-                if int(img_path.stem.split("_")[-1]) in dataset['filter_dataset_IDs']:
-                    continue
+        img = reader.read_images(str(img_path))[0].astype(np.float32)
+        mask = reader.read_images(str(mask_path))[0].astype(bool)
 
-            img = dataset['reader'].read_images(str(img_path))[0].astype(np.float32)
-            mask = dataset['reader'].read_images(str(mask_path))[0].astype(bool)
+        if np.isnan(img).any() or np.isnan(mask).any():
+            print(f"ATTENTION: Valeurs NaN détectées dans {img_path}")
 
-            # Vérifier si l'image ou le masque sont corrompus par des NaN
-            if np.isnan(img).any() or np.isnan(mask).any():
-                print(f"ATTENTION: Valeurs NaN détectées dans {img_path}")
+        if img.size == 0 or 0 in img.shape:
+            raise ValueError(f"CRASH : L'image chargée est vide ! Fichier : {img_path}")
 
-            # --- DEBUG BLOCK ---
-            # Vérifier si l'image est vide dès le chargement
-            if img.size == 0 or 0 in img.shape:
-                raise ValueError(f"CRASH : L'image chargée est vide ! Fichier : {img_path}")
+        data_dict = {'Image': img, 'Mask': mask}
+        is_empty_foreground = not mask.any() or not img.any()
 
-            # Si l'image n'est pas vide ici, c'est qu'une de vos transformations 
-            # (avant ScaleIntensityRangePercentilesd) la rend vide.
-            # -------------------
+        for t in dataset['transforms'].transforms:
+            if is_empty_foreground and "CropForegroundd" in t.__class__.__name__:
+                continue 
+            data_dict = t(data_dict)
 
-            # transformed = dataset['transforms']({'Image': img, 'Mask': mask})
-            data_dict = {'Image': img, 'Mask': mask}
-
-            # Vérifier si le masque est complètement vide (aucun vaisseau)
-            # OU si l'image est toute noire
-            is_empty_foreground = not mask.any() or not img.any()
-
-            # Appliquer les transformations une par une manuellement
-            for t in dataset['transforms'].transforms:
-                # Si l'image est vide, on ignore spécifiquement le recadrage pour éviter le crash
-                if is_empty_foreground and "CropForegroundd" in t.__class__.__name__:
-                    continue 
-                    
-                data_dict = t(data_dict)
-
-            transformed = data_dict
-            return transformed['Image'], transformed['Mask'] > 0
+        return data_dict['Image'], data_dict['Mask'] > 0
