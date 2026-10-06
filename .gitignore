@@ -9,6 +9,8 @@ __pycache__
 
 experiments
 data/d_*
+data/wds*
+data/finetune
 runs
 ckpts
 outputs
@@ -17,4 +19,4 @@ tests
 sauron
 logs
 dice.sh
-venv
+venv*
