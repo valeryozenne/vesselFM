@@ -9,6 +9,8 @@
 #SBATCH --cpus-per-task=12
 #SBATCH --hint=nomultithread
 ##SBATCH --qos=qos_prepost
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=hippolyte.salles@gmail.com
 
 set -euo pipefail
 
