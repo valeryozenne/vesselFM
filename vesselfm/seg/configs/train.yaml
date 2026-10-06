@@ -19,17 +19,17 @@ path_to_chkpt: null
 devices: [0]
 
 # logging
-run_name: 260717a
+run_name: 260917d
 wandb_project: rmsbvessel
 chkpt_folder: runs #TODO
-offline: True # permet de skip la connexion à wandb
+offline: False # permet de skip la connexion à wandb
 
 # dataloader
 dataloader:
   _target_: "torch.utils.data.DataLoader"
   _partial_: True
-  num_workers: 16
-  prefetch_factor: 3
+  num_workers: 32
+  prefetch_factor: 4
   batch_size: ${batch_size}
   pin_memory: True
   persistent_workers: True

@@ -1,0 +1,8 @@
+defaults:
+  - default_finetune@SMH
+  - _self_
+
+SMH:
+  sample_prop: 1
+  path: data/finetune/smh #TODO
+  file_format: "nii.gz"

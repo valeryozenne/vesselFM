@@ -1,13 +1,13 @@
 defaults:
   - train
-  - override data: eval_msd8
+  - override data: eval_smh
   - _self_
 
 num_shots: 0
 lr: 0.00001
 devices: [0]
 run_name: rmsbvessel
-path_to_chkpt: runs/pretrain_260917d_last.ckpt #TODO
+path_to_chkpt: runs/rmsbvessel/260917d/pretrain_260917d_last.ckpt #TODO
 chkpt_folder:  runs/vesselfm/finetune #TODO
 
 dataloader:

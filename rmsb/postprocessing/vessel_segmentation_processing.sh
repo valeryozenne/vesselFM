@@ -3,8 +3,8 @@
 # run_vessel_segmentation_pipeline.sh
 #
 # Runs the vessel segmentation post-processing pipeline on one or more
-# "*_cleaned.nii.gz" masks. INPUT_PATH can be:
-#   - a single mask file (e.g. .../028__..._cleaned.nii.gz)
+# "*_0000.nii.gz" masks. INPUT_PATH can be:
+#   - a single mask file (e.g. .../028__..._0000.nii.gz)
 #   - a directory containing mask file(s) directly inside it
 #     (e.g. out/MWA20220203a/Pre) -- only that folder is scanned
 #   - a directory scanned recursively with --recursive
@@ -12,12 +12,12 @@
 #
 # mirroring a layout such as:
 #
-#   out/<Patient>/<Pre|Post>/<series>_cleaned.nii.gz
+#   out/<Patient>/<Pre|Post>/<series>_0000.nii.gz
 #
 # For each mask found, runs in sequence:
-#   1. resample_mask.py        input_cleaned.nii.gz        -> input_cleaned_sr.nii.gz
-#   2. binary_opening.py       input_cleaned_sr.nii.gz     -> input_cleaned_sr_bo.nii.gz
-#   3. smooth_segmentation.py  input_cleaned_sr_bo.nii.gz  -> input_cleaned_smooth.nii.gz
+#   1. resample_mask.py        input_0000.nii.gz        -> input_0000_sr.nii.gz
+#   2. binary_opening.py       input_0000_sr.nii.gz     -> input_0000_sr_bo.nii.gz
+#   3. smooth_segmentation.py  input_0000_sr_bo.nii.gz  -> input_0000_smooth.nii.gz
 #
 set -euo pipefail
 
@@ -48,8 +48,8 @@ cat <<EOF
 Usage: $(basename "$0") [OPTIONS] INPUT_PATH
 
 INPUT_PATH is either:
-  - a single "*_cleaned.nii.gz" mask file, or
-  - a directory: every "*_cleaned.nii.gz" file directly inside it is
+  - a single "*_0000.nii.gz" mask file, or
+  - a directory: every "*_0000.nii.gz" file directly inside it is
     processed (add --recursive to also descend into subfolders).
 
 Runs the vessel segmentation post-processing pipeline
@@ -76,7 +76,7 @@ Examples:
   $(basename "$0") out/MWA20220203a/Pre
 
   # Process a single specific mask file
-  $(basename "$0") out/MWA20220203a/Pre/028__..._cleaned.nii.gz
+  $(basename "$0") out/MWA20220203a/Pre/028__..._0000.nii.gz
 
   # Batch-process an entire "out" tree, 4 masks at a time
   $(basename "$0") --recursive --jobs 4 out
@@ -145,10 +145,10 @@ log "Log file: $LOG_FILE"
 # ---------------------------------------------------------------------------
 process_one() {
     local input="$1"
-    local base="${input%_cleaned.nii.gz}"
-    local sr="${base}_cleaned_sr.nii.gz"
-    local bo="${base}_cleaned_sr_bo.nii.gz"
-    local smooth="${base}_cleaned_smooth.nii.gz"
+    local base="${input%_0000.nii.gz}"
+    local sr="${base}_0000_sr.nii.gz"
+    local bo="${base}_0000_sr_bo.nii.gz"
+    local smooth="${base}_0000_smooth.nii.gz"
 
     run() {
         if [[ "$DRY_RUN" -eq 1 ]]; then
@@ -217,21 +217,21 @@ MASKS=()
 
 if [[ -f "$INPUT_PATH" ]]; then
     case "$INPUT_PATH" in
-        *_cleaned.nii.gz) MASKS=("$INPUT_PATH") ;;
-        *) die "Input file does not look like a *_cleaned.nii.gz mask: $INPUT_PATH" ;;
+        *_0000.nii.gz) MASKS=("$INPUT_PATH") ;;
+        *) die "Input file does not look like a *_0000.nii.gz mask: $INPUT_PATH" ;;
     esac
 elif [[ -d "$INPUT_PATH" ]]; then
     if [[ "$RECURSIVE" -eq 1 ]]; then
-        mapfile -d '' -t MASKS < <(find "$INPUT_PATH" -type f -name "*_cleaned.nii.gz" -print0 | sort -z)
+        mapfile -d '' -t MASKS < <(find "$INPUT_PATH" -type f -name "*_0000.nii.gz" -print0 | sort -z)
     else
-        mapfile -d '' -t MASKS < <(find "$INPUT_PATH" -maxdepth 1 -type f -name "*_cleaned.nii.gz" -print0 | sort -z)
+        mapfile -d '' -t MASKS < <(find "$INPUT_PATH" -maxdepth 1 -type f -name "*_0000.nii.gz" -print0 | sort -z)
     fi
 else
     die "Input path is neither a file nor a directory: $INPUT_PATH"
 fi
 
 if [[ "${#MASKS[@]}" -eq 0 ]]; then
-    log "No *_cleaned.nii.gz masks found at $INPUT_PATH (use --recursive to search subfolders)"
+    log "No *_0000.nii.gz masks found at $INPUT_PATH (use --recursive to search subfolders)"
     exit 0
 fi
 

@@ -11,6 +11,9 @@ experiments
 data/d_*
 data/wds*
 data/finetune
+data/converted_real
+data/finetune
+data/evaluation
 runs
 ckpts
 outputs
