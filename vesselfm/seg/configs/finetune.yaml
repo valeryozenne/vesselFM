@@ -1,19 +1,19 @@
 defaults:
   - train
-  - override data: eval_bvem
+  - override data: eval_msd8
   - _self_
 
-num_shots: 3
+num_shots: 0
 lr: 0.00001
 devices: [0]
 run_name: rmsbvessel
-path_to_chkpt: runs/rmsbvessel/260717a/pretrain_260717a_last.ckpt #TODO
+path_to_chkpt: runs/pretrain_260917d_last.ckpt #TODO
 chkpt_folder:  runs/vesselfm/finetune #TODO
 
 dataloader:
-  num_workers: 0 # permet au finetune de fonctionner sans erreur de GPU CUDA
-  prefetch_factor: null
-  persistent_workers: False
+  num_workers: 4 # permet au finetune de fonctionner sans erreur de GPU CUDA
+  prefetch_factor: 2
+  persistent_workers: True
   shuffle: False
 
 trainer:
