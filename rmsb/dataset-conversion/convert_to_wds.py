@@ -21,7 +21,7 @@ def std_out_err_redirect_tqdm():
     finally:
         sys.stdout, sys.stderr = orig_out_err
 
-def process_dreal():
+def process_dreal(name: str = ""):
     print("Début de conversion domaine expérimental")
     ROOT_DIR = Path("data/d_real")
     os.makedirs("data/wds", exist_ok=True)
@@ -29,7 +29,7 @@ def process_dreal():
     # 1. Collecter tous les échantillons existants
     samples: dict[str, list[tuple[str, str, str]]] = {}
     for dataset_dir in tqdm(sorted(ROOT_DIR.iterdir()), desc=ROOT_DIR.name, position=0):
-        if not dataset_dir.is_dir():
+        if not dataset_dir.is_dir() or name not in dataset_dir.name:
             continue
         pattern = "data/wds/" + dataset_dir.name + "-%06d.tar"
         samples[pattern] = []
@@ -102,18 +102,51 @@ def process_drand(dir: Path):
     print("Conversion terminée !")
 
 
+def process_background(dir: Path):
+    print("Début de conversion background domaine randomisé")
+    ROOT_DIR = Path("data/d_drand/background")
+    DEST_DIR = dir / "wds_background"
+    DEST_DIR.mkdir(parents=True, exist_ok=True)
+    PATTERN = "background-%06d.tar"
+
+    # 2. Écriture en Shards avec ShardWriter
+    # maxcount : nb d'échantillons par shard | maxsize : taille max en octets (~3 Go ici)
+    with std_out_err_redirect_tqdm() as orig_stdout:
+        with wds.ShardWriter(
+            str(DEST_DIR) + '/' + PATTERN, maxcount=400, maxsize=1024 * 1024 * 1024 * 3
+        ) as sink:
+            for img_path in tqdm(sorted(ROOT_DIR.iterdir()), desc="Consitution des shards", file=orig_stdout, dynamic_ncols=True):
+                
+                # Lire les fichiers sous forme d'octets bruts (évite le réencodage)
+                with open(img_path, "rb") as f_img:
+                    img_bytes = f_img.read()
+
+                sink.write({
+                    "__key__": img_path.stem, # :06d
+                    "npy": img_bytes,
+                })
+
+    print("Conversion terminée !")
+
+
 if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--dreal", action='store_true')
     parser.add_argument("--drand", action='store_true')
+    parser.add_argument("--background", action='store_true')
     parser.add_argument("--dir", type=str, default="data")
+    parser.add_argument("--name", type=str, default="")
     args = parser.parse_args()
+
     dir = Path(args.dir)
     assert dir.exists()
+    name = str(args.name)
 
     if args.dreal:
-        process_dreal()
+        process_dreal(name)
     if args.drand:
         process_drand(dir)
+    if args.background:
+        process_background(dir)
