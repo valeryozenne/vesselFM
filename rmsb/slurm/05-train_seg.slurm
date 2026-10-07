@@ -10,6 +10,8 @@
 #SBATCH --gpus-per-node=4
 #SBATCH --cpus-per-task=24
 ##SBATCH --qos=qos_gpu_h100-dev
+#SBATCH --mail-type=ALL
+#SBATCH --mail-user=hippolyte.salles@gmail.com
 
 set -euo pipefail
 

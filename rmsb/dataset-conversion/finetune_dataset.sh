@@ -24,26 +24,6 @@ cp data/d_drand/foreground/manual_annotations/test_set_m78_0_label.nii data/fine
 cp data/d_drand/foreground/manual_annotations/test_set_m78_1.nii       data/finetune/octa/test/1/img.nii
 cp data/d_drand/foreground/manual_annotations/test_set_m78_1_label.nii data/finetune/octa/test/1/mask.nii
 
-# cp ~/Téléchargements/msd_task8/imagesTr/hepaticvessel_001.nii.gz  data/finetune/msd/val/0/img.nii.gz
-# cp ~/Téléchargements/msd_task8/labelsTr/hepaticvessel_001.nii.gz  data/finetune/msd/val/0/mask.nii.gz
-
-# cp ~/Téléchargements/msd_task8/imagesTr/hepaticvessel_002.nii.gz  data/finetune/msd/train/0/img.nii.gz
-# cp ~/Téléchargements/msd_task8/labelsTr/hepaticvessel_002.nii.gz  data/finetune/msd/train/0/mask.nii.gz
-# cp ~/Téléchargements/msd_task8/imagesTr/hepaticvessel_004.nii.gz  data/finetune/msd/train/1/img.nii.gz
-# cp ~/Téléchargements/msd_task8/labelsTr/hepaticvessel_004.nii.gz  data/finetune/msd/train/1/mask.nii.gz
-# cp ~/Téléchargements/msd_task8/imagesTr/hepaticvessel_005.nii.gz  data/finetune/msd/train/2/img.nii.gz
-# cp ~/Téléchargements/msd_task8/labelsTr/hepaticvessel_005.nii.gz  data/finetune/msd/train/2/mask.nii.gz
-
-# offset=0
-# for i in {0..255}; do
-#     # si le fichier n'existe pas, on prend le suivant mais on garde le bon numéro d'image pour le nommage
-#     while [ ! -f ~/Téléchargements/msd_task8/imagesTr/hepaticvessel_$(printf "%03d" $((i+6+$offset))).nii.gz ]; do
-#         echo "File ~/Téléchargements/msd_task8/imagesTr/hepaticvessel_$(printf "%03d" $((i+6+$offset))).nii.gz does not exist, skipping to next file"
-#         offset=$offset+1
-#     done
-#     cp ~/Téléchargements/msd_task8/imagesTr/hepaticvessel_$(printf "%03d" $((i+6+$offset))).nii.gz  data/finetune/msd/test/$i/img.nii.gz
-#     cp ~/Téléchargements/msd_task8/labelsTr/hepaticvessel_$(printf "%03d" $((i+6+$offset))).nii.gz  data/finetune/msd/test/$i/mask.nii.gz
-# done
 
 cp data/d_real/MSD_Task8/12/img.npy  data/finetune/msd/val/0/img.npy
 cp data/d_real/MSD_Task8/12/mask.npy  data/finetune/msd/val/0/mask.npy

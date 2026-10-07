@@ -11,9 +11,9 @@ path_to_chkpt: runs/rmsbvessel/260917d/pretrain_260917d_last.ckpt #TODO
 chkpt_folder:  runs/vesselfm/finetune #TODO
 
 dataloader:
-  num_workers: 0 # permet au finetune de fonctionner sans erreur de GPU CUDA
-  prefetch_factor: null
-  persistent_workers: False
+  num_workers: 4 # permet au finetune de fonctionner sans erreur de GPU CUDA
+  prefetch_factor: 2
+  persistent_workers: True
   shuffle: False
 
 trainer:

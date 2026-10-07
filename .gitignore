@@ -9,6 +9,8 @@ __pycache__
 
 experiments
 data/d_*
+data/wds*
+data/finetune
 data/converted_real
 data/finetune
 data/evaluation
@@ -20,4 +22,4 @@ tests
 sauron
 logs
 dice.sh
-venv
+venv*
