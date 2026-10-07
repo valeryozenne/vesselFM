@@ -1,9 +1,9 @@
-DIR="tests/MWA20220317a"
+DIR="tests/allPostKM/Dataset100_SMH-needle"
 
 mkdir -p $DIR/00_LIVER $DIR/04_FILTERED $DIR/02_CROPPED $DIR/03_RESAMPLED $DIR/05_VESSELS $DIR/06_VESSELS_MASKED $DIR/01_LIVER_REGRID
 
-RAWNIFTIS=$(ls $DIR/RAW-NIFTI/*.nii.gz)
-RAWNIFTIBASENAMES=$(ls $DIR/RAW-NIFTI/*.nii.gz | xargs -n 1 basename | sed 's/.nii.gz//')
+RAWNIFTIS=$(ls $DIR/imagesAll/*.nii.gz)
+RAWNIFTIBASENAMES=$(ls $DIR/imagesAll/*.nii.gz | xargs -n 1 basename | sed 's/.nii.gz//')
 echo "Found $RAWNIFTIBASENAMES"
 
 # LIVER SEGMENTATION

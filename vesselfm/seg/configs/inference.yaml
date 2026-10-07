@@ -6,9 +6,9 @@ defaults:
 ## T2 post config
 
 # i/o
-image_path: tests/MWA20220317a/04_FILTERED
+image_path: tests/allPostKM/Dataset100_SMH-needle/04_FILTERED
 image_file_ending: nii.gz
-output_folder: tests/MWA20220317a/05_VESSELS
+output_folder: tests/allPostKM/Dataset100_SMH-needle/05_VESSELS
 file_app: ""
 
 mask_path: null
@@ -47,7 +47,7 @@ tta:
   scales: [0.2, 0.5, 1]
   invert: false
   invert_mean_thresh: 0.1
-  equalize_hist: true
+  equalize_hist: false
   hist_bins: 2
 
 # post-processing
